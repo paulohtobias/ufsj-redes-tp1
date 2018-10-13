@@ -1,6 +1,6 @@
 #Main Makefile
 CC := gcc
-CFLAGS := -g -Wall -MMD -DDEBUG
+CFLAGS := -Wall -MMD
 
 #Binary
 ifeq ($(OS),Windows_NT)
@@ -15,11 +15,7 @@ endif
 IDIR := ./include
 SDIR := ./src
 
-ifeq ($(OS),Windows_NT)
-	ODIR := ./obj/windows
-else
-	ODIR := ./obj/linux
-endif
+ODIR := ./obj/release
 
 #Files
 SOURCE := .c
@@ -30,10 +26,10 @@ INCLUDE_PATHS := -I$(IDIR)
 #Libraries
 LIBS := gtk+-3.0
 CFLAGS += `pkg-config --cflags $(LIBS)`
-LIBRARIES := `pkg-config --libs $(LIBS)`
+LOADLIBES := `pkg-config --libs $(LIBS)`
 
 #Compilation line
-COMPILE := $(CC) $(CFLAGS) $(INCLUDE_PATHS)
+COMPILE = $(CC) $(CFLAGS) $(INCLUDE_PATHS)
 
 #FILEs
 #---------------Source----------------#
@@ -44,19 +40,26 @@ OBJS := $(SRCS:$(SDIR)/%$(SOURCE)=$(ODIR)/%.o)
 #-------------Dependency--------------#
 DEPS := $(SRCS:$(SDIR)/%$(SOURCE)=$(ODIR)/%.d)
 
+# Build main application
 all: $(OBJS)
-	$(COMPILE) $(OBJS) main$(SOURCE) -o $(BIN) $(LIBRARIES)
+	$(COMPILE) $(OBJS) main$(SOURCE) -o $(BIN) $(LOADLIBES)
 
-dll: LIBRARIES += -lm -fPIC
+# Build main application
+debug: CFLAGS += -g -DDEBUG
+debug: $(OBJS)
+	$(COMPILE) $(OBJS) main$(SOURCE) -o $(BIN) $(LOADLIBES)
+
+# Build shared library
+dll: LOADLIBES += -lm -fPIC
 dll: LIB_NAME :=
 dll: $(OBJS)
-	$(COMPILE) -shared -o lib$(LIB_NAME).$(DLE) $(OBJS) $(LIBRARIES)
+	$(COMPILE) -shared -o lib$(LIB_NAME).$(DLE) $(OBJS) $(LOADLIBES)
 
 # Include all .d files
 -include $(DEPS)
 
 $(ODIR)/%.o: $(SDIR)/%$(SOURCE)
-	$(COMPILE) -c $< -o $@ $(LIBRARIES)
+	$(COMPILE) -c $< -o $@ $(LOADLIBES)
 
 .PHONY : clean
 clean :

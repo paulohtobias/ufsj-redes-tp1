@@ -21,11 +21,11 @@ int ssfd;
 pthread_t thread;
 
 ///Lê o log do chat do servidor e exibe na tela.
-void *thread_leitura(void *);
+void *receive_thread(void *);
 
 GtkBuilder *builder;
 
-void foo(GtkEntry *entry, gpointer user_data);
+void send(GtkEntry *entry, gpointer user_data);
 
 int main(int argc, char *argv[]) {
 	int i;
@@ -38,8 +38,8 @@ int main(int argc, char *argv[]) {
 	GtkWidget *window = GTK_WIDGET(gtk_builder_get_object(builder, "window"));
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
-	GtkWidget *entry = GTK_WIDGET(gtk_builder_get_object(builder, "entry"));
-	g_signal_connect(G_OBJECT(entry), "activate", G_CALLBACK(foo), NULL);
+	GtkWidget *chat_entry = GTK_WIDGET(gtk_builder_get_object(builder, "chat_entry"));
+	g_signal_connect(G_OBJECT(chat_entry), "activate", G_CALLBACK(send), NULL);
 
 	char buff[BUFF_SIZE];
 	
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 
 	printf("[Client] connected to server.\n");
 
-	pthread_create(&thread, NULL, thread_leitura, NULL);
+	pthread_create(&thread, NULL, receive_thread, NULL);
 
 	gtk_widget_show_all(window);
 	gtk_main();
@@ -69,11 +69,11 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 
-void *thread_leitura(void *arg) {
+void *receive_thread(void *arg) {
 	int retval;
 	char buff[BUFF_SIZE];
 
-	GtkWidget *textview = GTK_WIDGET(gtk_builder_get_object(builder, "textview"));
+	GtkWidget *chat_textview_log = GTK_WIDGET(gtk_builder_get_object(builder, "chat_textview_log"));
 	GtkTextIter iter_end;
 	GtkTextBuffer *textbuffer;
 
@@ -90,14 +90,14 @@ void *thread_leitura(void *arg) {
 			
 			gsize bl;
 			gchar *u8buff = g_locale_to_utf8(buff, -1, NULL, &bl, NULL);
-			textbuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview));
+			textbuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(chat_textview_log));
 			gtk_text_buffer_get_end_iter(textbuffer, &iter_end);
 			gtk_text_buffer_insert_markup(textbuffer, &iter_end, u8buff, bl);
 		}
 	}
 }
 
-void foo(GtkEntry *entry, gpointer user_data) {
+void send(GtkEntry *entry, gpointer user_data) {
 	const char *command = gtk_entry_get_text(entry);
 	int retval = write(ssfd, command, gtk_entry_get_text_length(entry) + 1);
 	if (retval == -1) {

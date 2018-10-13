@@ -5,8 +5,14 @@
 - **Faz toda a preparação inicial do jogo:**
 	- Decide os times (pode ser feito para os jogadores escolherem)
 	- Zera a pontuação.
+	- Abre threads p/ escrita e leitura com todos os jogadores.
+	- cada cliente tem um bool p/ saber se está na sua vez.
 
 - **Loop principal:**
+	- Informa a pontuação atual a todos os jogadores.
+	- Embaralha e distribui as cartas.
+
+- **Loop principal (old):**
 	- Informa a pontuação atual a todos os jogadores.
 	- Embaralha e distribui as cartas.
 	- Informa ao jogador atual para fazer sua jogada (`write`) e espera o retorno (`read`).
