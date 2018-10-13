@@ -39,4 +39,5 @@ obj
 #Project folders and files
 nbproject
 .vscode
+*.glade~
 main

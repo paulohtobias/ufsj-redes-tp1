@@ -1,6 +1,6 @@
 #Main Makefile
 CC := gcc
-CFLAGS := -g -Wall -MMD
+CFLAGS := -g -Wall -MMD -DDEBUG
 
 #Binary
 ifeq ($(OS),Windows_NT)
@@ -28,9 +28,9 @@ SOURCE := .c
 INCLUDE_PATHS := -I$(IDIR)
 
 #Libraries
-LIBS :=
-#CFLAGS += `pkg-config --cflags $(LIBS)`
-#LIBRARIES := `pkg-config --libs $(LIBS)`
+LIBS := gtk+-3.0
+CFLAGS += `pkg-config --cflags $(LIBS)`
+LIBRARIES := `pkg-config --libs $(LIBS)`
 
 #Compilation line
 COMPILE := $(CC) $(CFLAGS) $(INCLUDE_PATHS)
