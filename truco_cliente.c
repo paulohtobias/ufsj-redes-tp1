@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
 
 	pthread_create(&thread, NULL, t_receive, NULL);
 
+	gdk_threads_init();
 	gtk_widget_show_all(window);
 	gtk_main();
 

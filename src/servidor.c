@@ -59,6 +59,13 @@ void *t_leitura(void *args) {
 		cores_times[jogador->id], jogador->id
 	);
 
+	pthread_mutex_lock(&mutex_broadcast);
+	mensagem_bem_vindo(&gmensagem);
+	mensagem_definir_textof(&gmensagem, "Bem vindo, %s! Aguardando todos os jogadores...", jogador_nome);
+	new_msg = MSG_JOGADOR(jogador->id);
+	pthread_cond_signal(&cond_new_msg);
+	pthread_mutex_unlock(&mutex_broadcast);
+
 	// Loop principal
 	while (1) {
 		#ifdef DEBUG
@@ -102,7 +109,7 @@ void *t_escrita(void *args) {
 	while (1) {
 		//Espera uma nova mensagem chegar.
 		pthread_mutex_lock(&mutex_new_msg);
-		while (!new_msg) {
+		while (new_msg == MSG_NINGUEM) {
 			pthread_cond_wait(&cond_new_msg, &mutex_new_msg);
 		}
 		pthread_mutex_unlock(&mutex_new_msg);
@@ -111,6 +118,9 @@ void *t_escrita(void *args) {
 		pthread_mutex_lock(&mutex_broadcast);
 		for (i = 0; i < NUM_JOGADORES; i++) {
 			if ((1 << i) & new_msg) {
+				#ifdef DEBUG
+				printf("[Servidor] enviando msg (%d) para %d\n", gmensagem.tipo, i);
+				#endif //DEBUG
 				write(jogadres[i].socket_fd, &gmensagem, mensagem_obter_tamanho(&gmensagem));
 			}
 		}

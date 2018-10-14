@@ -5,6 +5,8 @@ int main(int argc, char *argv[]) {
 
 	int chat_socket_fd = criar_socket_servidor();
 
+	pthread_create(&thread_escrita, NULL, t_escrita, NULL);
+	
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		//Faz conexão inicial com o cliente.
 		int jsfd = s_accept(chat_socket_fd);
@@ -12,7 +14,6 @@ int main(int argc, char *argv[]) {
 		jogador_init(jogadres + i, i, jsfd);
 	}
 
-	pthread_create(&thread_escrita, NULL, t_escrita, NULL);
 
 	extern pthread_cond_t cond_init;
 	pthread_cond_broadcast(&cond_init);

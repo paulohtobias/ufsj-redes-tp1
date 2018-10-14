@@ -31,7 +31,7 @@ void *t_receive(void *arg) {
 			#endif
 			
 			if (mensagem.tipo == SMT_BEM_VINDO) {
-				gtk_label_set_text(GTK_LABEL(jogo_mensagem_servidor_label), mensagem_obter_texto(&mensagem));
+				gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), mensagem_obter_texto(&mensagem));
 			}
 			else if (mensagem.tipo == SMT_CHAT) {
 				gsize bl;

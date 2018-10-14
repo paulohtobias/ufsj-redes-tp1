@@ -49,7 +49,8 @@ $(ODIR)/%.o: $(SDIR)/%.c
 
 .PHONY : clean
 clean :
-	-rm $(BIN) $(OBJS) $(DEPS)
+	-rm -f obj/debug/*
+	-rm -f obj/release/*
 
 init:
 	mkdir -p include

@@ -91,7 +91,6 @@
               <object class="GtkLabel" id="jogo_mensagem_servidor_label">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Empate. Mostre sua maior carta.</property>
                 <property name="use_markup">True</property>
               </object>
               <packing>
