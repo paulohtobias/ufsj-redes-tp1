@@ -7,12 +7,6 @@
 #define NUM_JOGADORES 4
 extern char cores_times[NUM_JOGADORES][16];
 
-typedef struct EstadoJogador {
-	uint8_t id;
-	uint8_t qtd_cartas_mao;
-	Carta carta_jogada;
-} EstadoJogador;
-
 typedef enum VALOR_PARTIDA {
 	VLR_NORMAL = 2,
 	VLR_TRUCO = 4,
@@ -26,5 +20,17 @@ typedef struct EstadoJogo {
 	VALOR_PARTIDA valor_partida;
 	uint8_t jogos[2]; //0 ou 1
 } EstadoJogo;
+
+typedef struct EstadoJogador {
+	uint8_t id;
+	uint8_t qtd_cartas_mao;
+	Carta carta_jogada;
+} EstadoJogador;
+
+typedef enum RESPOSTAS {
+	RSP_NAO,
+	RSP_SIM,
+	RSP_AUMENTO
+} RESPOSTAS;
 
 #endif //TRUCO_H

@@ -8,6 +8,7 @@
 #include <netinet/ip.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <stdarg.h>
 
 #include "truco.h"
 
@@ -19,6 +20,8 @@
 
 /* ENUMS E TIPOS */
 typedef enum MENSAGEM_TIPO {
+	SMT_BEM_VINDO,
+	SMT_PROCESSANDO,
 	SMT_QUER_QUEIMAR_MAO,
 	SMT_ENVIANDO_CARTAS,
 	SMT_SEU_TURNO,
@@ -39,17 +42,54 @@ enum {
 	MSG_TIME2 = 10,
 	MSG_TODOS = 0xF
 };
+#define MSG_JOGADOR(id) (1 << id)
 
 typedef struct Mensagem {
-	uint8_t estados;			// Bitmask p/ cada jogador.
-	uint8_t pontuacao;			// Se é pra atualizar a pontuação.
-	MENSAGEM_TIPO tipo;			// Tipo da mensagem.
-	uint8_t tamanho_dados;		// Tamanho dos dados da mensagem.
-	uint8_t dados[BUFF_SIZE];	// Dados.
+	uint8_t estados;                // Quantos estados serão atualizados.
+	uint8_t atualizar_pontuacao;    // Se é pra atualizar a pontuação.
+	MENSAGEM_TIPO tipo;             // Tipo da mensagem.
+	uint8_t tamanho_dados;          // Tamanho dos dados da mensagem.
+	uint8_t dados[BUFF_SIZE];       // Dados.
 } Mensagem;
 
 
 /* FUNÇÕES */
+int mensagem_enviar(const Mensagem *mensagem, int sfd);
+
 size_t mensagem_obter_tamanho(const Mensagem *mensagem);
+
+void mensagem_definir(Mensagem *mensagem, MENSAGEM_TIPO tipo, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_pontuacao, const EstadoJogo *estado_jogo, uint8_t *dados, uint8_t tamanho_dados);
+
+void mensagem_simples(Mensagem *mensagem, MENSAGEM_TIPO tipo);
+
+void mensagem_atualizar_estado(Mensagem *mensagem, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_pontuacao, const EstadoJogo *estado_jogo);
+
+void mensagem_bem_vindo(Mensagem *mensagem);
+
+void mensagem_processando(Mensagem *mensagem, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_pontuacao, const EstadoJogo *estado_jogo, char *texto, uint8_t tamanho_texto);
+
+void mensagem_queimar_mao(Mensagem *mensagem);
+
+void mensagem_enviando_cartas(Mensagem *mensagem, const EstadoJogador *estado_jogador);
+
+void mensagem_seu_turno(Mensagem *mensagem);
+
+void mensagem_truco(Mensagem *mensagem);
+
+void mensagem_empate(Mensagem *mensagem);
+
+void mensagem_fim_partida(Mensagem *mensagem);
+
+void mensagem_fim_jogo(Mensagem *mensagem);
+
+void mensagem_fim_queda(Mensagem *mensagem);
+
+void mensagem_chat(Mensagem *mensagem, char *texto, uint8_t tamanho_texto);
+
+void mensagem_definir_textof(Mensagem *mensagem, const char *format, ...);
+
+void mensagem_print(const Mensagem *mensagem, const char *titulo);
+
+char *mensagem_obter_texto(const Mensagem *mensagem);
 
 #endif //PROTOCOLO_H

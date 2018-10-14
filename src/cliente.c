@@ -8,7 +8,14 @@ void *t_receive(void *arg) {
 	int retval;
 	Mensagem mensagem;
 
+	//Jogo
+	GtkWidget *jogo_textview_log = GTK_WIDGET(gtk_builder_get_object(builder, "jogo_textview_log"));
+	GtkWidget *jogo_mensagem_servidor_label = GTK_WIDGET(gtk_builder_get_object(builder, "jogo_mensagem_servidor_label"));
+
+	//Chat
 	GtkWidget *chat_textview_log = GTK_WIDGET(gtk_builder_get_object(builder, "chat_textview_log"));
+	
+	//Extra
 	GtkTextIter iter_end;
 	GtkTextBuffer *textbuffer;
 
@@ -19,11 +26,14 @@ void *t_receive(void *arg) {
 		}
 
 		if (retval > 0) {
-			if (mensagem.tipo == SMT_CHAT) {
-				#ifdef DEBUG
-				printf("CHEGOU DO SERVIDOR: '%s'\n", (char *) mensagem.dados);
-				#endif
-				
+			#ifdef DEBUG
+			mensagem_print(&mensagem, "CHEGOU DO SERVIDOR: ");
+			#endif
+			
+			if (mensagem.tipo == SMT_BEM_VINDO) {
+				gtk_label_set_text(GTK_LABEL(jogo_mensagem_servidor_label), mensagem_obter_texto(&mensagem));
+			}
+			else if (mensagem.tipo == SMT_CHAT) {
 				gsize bl;
 				gchar *u8buff = g_locale_to_utf8((char *) mensagem.dados, -1, NULL, &bl, NULL);
 				textbuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(chat_textview_log));

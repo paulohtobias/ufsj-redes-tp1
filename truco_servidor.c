@@ -14,6 +14,9 @@ int main(int argc, char *argv[]) {
 
 	pthread_create(&thread_escrita, NULL, t_escrita, NULL);
 
+	extern pthread_cond_t cond_init;
+	pthread_cond_broadcast(&cond_init);
+
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		pthread_join(jogadres[i].thread.leitura, NULL);
 	}

@@ -1,8 +1,12 @@
 #include "servidor.h"
 
-pthread_mutex_t mutex_broadcast = PTHREAD_MUTEX_INITIALIZER;;
-pthread_mutex_t mutex_new_msg = PTHREAD_MUTEX_INITIALIZER;;
-pthread_cond_t cond_new_msg = PTHREAD_COND_INITIALIZER;;
+pthread_mutex_t mutex_init = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond_init = PTHREAD_COND_INITIALIZER;
+int num_jogadores = 0;
+
+pthread_mutex_t mutex_broadcast = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_new_msg = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond_new_msg = PTHREAD_COND_INITIALIZER;
 uint8_t new_msg = MSG_NINGUEM;
 
 int criar_socket_servidor() {
@@ -21,6 +25,8 @@ int s_accept(int ssfd) {
 	if (client_socket_fd == -1) {
 		handle_error(client_socket_fd, "accept");
 	}
+
+	num_jogadores++;
 
 	printf("[Server]: client %d connected.\n", client_socket_fd);
 
@@ -43,13 +49,13 @@ void *t_leitura(void *args) {
 	Jogador *jogador = args;
 
 	int retval;
-	char jogador_name[128];
+	char jogador_nome[128];
 	Mensagem mensagem;
 
 	//Setando o nome do jogador
 	sprintf(
-		jogador_name,
-		"<span font_weight='bold' color='%s'>client %d: </span>",
+		jogador_nome,
+		"<span font_weight='bold' color='%s'>Jogador %d: </span>",
 		cores_times[jogador->id], jogador->id
 	);
 
@@ -71,14 +77,15 @@ void *t_leitura(void *args) {
 		}
 
 		#ifdef DEBUG
-		printf("Mensagem [%2d]: '%s'\n", mensagem.tipo, mensagem_tipo_str[mensagem.tipo]);
+		mensagem_print(&mensagem, "");
 		#endif //DEBUG
 
 		if (mensagem.tipo == SMT_CHAT) {
 			pthread_mutex_lock(&mutex_broadcast);
-			gmensagem.tipo = SMT_CHAT;
-			snprintf((char *) gmensagem.dados, BUFF_SIZE, "%s%s\n", jogador_name, mensagem.dados);
-			gmensagem.tamanho_dados = strlen((char *) gmensagem.dados) + 1;
+			
+			mensagem_chat(&gmensagem, NULL, 0);
+			mensagem_definir_textof(&gmensagem, "%s%s\n", jogador_nome, mensagem.dados);
+			
 			new_msg = MSG_TODOS;
 			pthread_cond_signal(&cond_new_msg);
 			pthread_mutex_unlock(&mutex_broadcast);
