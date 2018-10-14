@@ -2,23 +2,10 @@
 CC := gcc
 CFLAGS := -Wall -MMD
 
-#Binary
-ifeq ($(OS),Windows_NT)
-	BIN := main.exe
-	DLE := dll
-else
-	BIN := main.out
-	DLE := so
-endif
-
 #Directories
 IDIR := ./include
 SDIR := ./src
-
 ODIR := ./obj/release
-
-#Files
-SOURCE := .c
 
 #Paths
 INCLUDE_PATHS := -I$(IDIR)
@@ -33,32 +20,31 @@ COMPILE = $(CC) $(CFLAGS) $(INCLUDE_PATHS)
 
 #FILEs
 #---------------Source----------------#
-SRCS := $(wildcard $(SDIR)/*$(SOURCE)) $(wildcard $(SDIR)/*/*$(SOURCE))
+SRCS := $(wildcard $(SDIR)/*.c)
 
 #---------------Object----------------#
-OBJS := $(SRCS:$(SDIR)/%$(SOURCE)=$(ODIR)/%.o)
+OBJS = $(SRCS:$(SDIR)/%.c=$(ODIR)/%.o)
 #-------------Dependency--------------#
-DEPS := $(SRCS:$(SDIR)/%$(SOURCE)=$(ODIR)/%.d)
+DEPS = $(SRCS:$(SDIR)/%.c=$(ODIR)/%.d)
 
 # Build main application
-all: $(OBJS)
-	$(COMPILE) $(OBJS) main$(SOURCE) -o $(BIN) $(LOADLIBES)
+all: servidor cliente
 
-# Build main application
+servidor: $(OBJS)
+	$(COMPILE) $(OBJS) truco_$@.c -o $@ $(LOADLIBES)
+
+cliente: $(OBJS)
+	$(COMPILE) $(OBJS) truco_$@.c -o $@ $(LOADLIBES)
+
+# Build main application for debug
 debug: CFLAGS += -g -DDEBUG
-debug: $(OBJS)
-	$(COMPILE) $(OBJS) main$(SOURCE) -o $(BIN) $(LOADLIBES)
+debug: all
 
-# Build shared library
-dll: LOADLIBES += -lm -fPIC
-dll: LIB_NAME :=
-dll: $(OBJS)
-	$(COMPILE) -shared -o lib$(LIB_NAME).$(DLE) $(OBJS) $(LOADLIBES)
 
 # Include all .d files
 -include $(DEPS)
 
-$(ODIR)/%.o: $(SDIR)/%$(SOURCE)
+$(ODIR)/%.o: $(SDIR)/%.c
 	$(COMPILE) -c $< -o $@ $(LOADLIBES)
 
 .PHONY : clean

@@ -6,8 +6,6 @@ void embaralhar(Carta *baralho, int qtd_cartas) {
 	int sorteados[qtd_cartas];
 	int posicao;
 
-	Carta troca;
-
 	//Inicialização
 	for (i = 0; i < qtd_cartas; i++) {
 		sorteados[i] = 0;

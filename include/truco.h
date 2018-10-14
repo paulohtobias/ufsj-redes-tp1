@@ -5,11 +5,7 @@
 
 /* DEFINIÇÕES E VARIÁVEIS GLOBAIS */
 #define NUM_JOGADORES 4
-char cores_times[NUM_JOGADORES][16] = {
-	/*        TIME 1         */   /*      TIME 2       */
-	"#0000FF", /* Blue       */   "#FF0000", /* Red    */ 
-	"#1E90FF", /* DodgerBlue */   "#FF6347"  /* Tomato */
-};
+extern char cores_times[NUM_JOGADORES][16];
 
 typedef struct EstadoJogador {
 	uint8_t id;

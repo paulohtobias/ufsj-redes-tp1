@@ -3,6 +3,8 @@
 
 #include "protocolo.h"
 
+/* DEFINIÇÕES */
+#define PORT 2222
 
 /* TIPOS */
 typedef struct ThreadJogador {
@@ -24,15 +26,19 @@ typedef struct Jogador {
 
 /* VARIÁVEIS GLOBAIS*/
 pthread_t thread_escrita;
-pthread_mutex_t mutex_broadcast;
-pthread_mutex_t mutex_new_msg;
-pthread_cond_t cond_new_msg;
-uint8_t new_msg;
+extern pthread_mutex_t mutex_broadcast;
+extern pthread_mutex_t mutex_new_msg;
+extern pthread_cond_t cond_new_msg;
+extern uint8_t new_msg;
 Mensagem gmensagem;
 Jogador jogadres[NUM_JOGADORES];
 
 
 /* FUNÇÕES */
+int servidor_init();
+
+int s_accept(int ssfd);
+
 void jogador_init(Jogador *jogador, uint8_t id, int sfd);
 
 void *t_leitura(void *args);

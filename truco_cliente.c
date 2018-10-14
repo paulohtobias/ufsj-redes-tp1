@@ -25,10 +25,9 @@ void *receive_thread(void *);
 
 GtkBuilder *builder;
 
-void send(GtkEntry *entry, gpointer user_data);
+void t_send(GtkEntry *entry, gpointer user_data);
 
 int main(int argc, char *argv[]) {
-	int i;
 	int retval;
 
 	//GUI
@@ -39,10 +38,10 @@ int main(int argc, char *argv[]) {
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
 	GtkWidget *chat_entry = GTK_WIDGET(gtk_builder_get_object(builder, "chat_entry"));
-	g_signal_connect(G_OBJECT(chat_entry), "activate", G_CALLBACK(send), NULL);
-
-	char buff[BUFF_SIZE];
+	g_signal_connect(G_OBJECT(chat_entry), "activate", G_CALLBACK(t_send), NULL);
 	
+	
+	//Socket
 	ssfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (ssfd == -1) {
 		handle_error(ssfd, "socket");
@@ -97,7 +96,7 @@ void *receive_thread(void *arg) {
 	}
 }
 
-void send(GtkEntry *entry, gpointer user_data) {
+void t_send(GtkEntry *entry, gpointer user_data) {
 	const char *command = gtk_entry_get_text(entry);
 	int retval = write(ssfd, command, gtk_entry_get_text_length(entry) + 1);
 	if (retval == -1) {

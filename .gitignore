@@ -32,6 +32,8 @@ obj
 *.x86_64
 *.hex
 *.lnk
+servidor
+cliente
 
 # Debug files
 *.dSYM/
@@ -41,3 +43,5 @@ nbproject
 .vscode
 *.glade~
 main
+
+cliente

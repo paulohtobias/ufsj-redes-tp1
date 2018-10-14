@@ -31,17 +31,7 @@ typedef enum MENSAGEM_TIPO {
 	__SMT_QTD
 } MENSAGEM_TIPO;
 
-char mensagem_tipo_str[__SMT_QTD][64] = {
-	"Deseja queimar sua mão?",
-	"Estou te enviando suas cartas.",
-	"Seu turno.",
-	"Alguém pediu truco|seis|nove|doze.",
-	"Houve empate. Me mostre sua maior carta."
-	"Fim da partida.",
-	"Fim do jogo.",
-	"Fim da queda.",
-	"Nova mensagem no chat."
-};
+extern char mensagem_tipo_str[__SMT_QTD][64];
 
 enum {
 	MSG_NINGUEM = 0,
