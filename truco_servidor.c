@@ -3,7 +3,7 @@
 int main(int argc, char *argv[]) {
 	int i;
 
-	int chat_socket_fd = servidor_init();
+	int chat_socket_fd = criar_socket_servidor();
 
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		//Faz conexão inicial com o cliente.

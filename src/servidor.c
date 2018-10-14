@@ -5,36 +5,8 @@ pthread_mutex_t mutex_new_msg = PTHREAD_MUTEX_INITIALIZER;;
 pthread_cond_t cond_new_msg = PTHREAD_COND_INITIALIZER;;
 uint8_t new_msg = MSG_NINGUEM;
 
-int servidor_init() {
-	int retval;
-	
-	int servidor_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (servidor_socket_fd == -1) {
-		handle_error(servidor_socket_fd, "socket");
-	}
-
-	int enable = 1;
-	retval = setsockopt(servidor_socket_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
-	if (retval < 0) {
-		handle_error(retval, "setsockopt(SO_REUSEADDR)");
-	}
-
-	struct sockaddr_in server_addr;
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	server_addr.sin_port = htons(PORT);
-
-	retval = bind(servidor_socket_fd, (struct sockaddr *) &server_addr, sizeof(server_addr));
-	if (retval == -1) {
-		handle_error(retval, "bind");
-	}
-
-	retval = listen(servidor_socket_fd, NUM_JOGADORES);
-	if (retval == -1) {
-		handle_error(retval, "listen");
-	}
-
-	return servidor_socket_fd;
+int criar_socket_servidor() {
+	return criar_socket(INADDR_ANY, PORTA, CONEXAO_MODO_SERVIDOR);
 }
 
 int s_accept(int ssfd) {
@@ -132,7 +104,7 @@ void *t_escrita(void *args) {
 		pthread_mutex_lock(&mutex_broadcast);
 		for (i = 0; i < NUM_JOGADORES; i++) {
 			if ((1 << i) & new_msg) {
-				write(jogadres[i].socket_fd, &gmensagem, sizeof gmensagem);
+				write(jogadres[i].socket_fd, &gmensagem, mensagem_obter_tamanho(&gmensagem));
 			}
 		}
 		new_msg = MSG_NINGUEM;

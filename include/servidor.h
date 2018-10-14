@@ -1,10 +1,7 @@
 #ifndef SERVIDOR_H
 #define SERVIDOR_H
 
-#include "protocolo.h"
-
-/* DEFINIÇÕES */
-#define PORT 2222
+#include "conexao.h"
 
 /* TIPOS */
 typedef struct ThreadJogador {
@@ -35,7 +32,7 @@ Jogador jogadres[NUM_JOGADORES];
 
 
 /* FUNÇÕES */
-int servidor_init();
+int criar_socket_servidor();
 
 int s_accept(int ssfd);
 
