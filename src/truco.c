@@ -67,17 +67,17 @@ Carta gbaralho[NUM_CARTAS] = {
 	{'4', OUROS, 1, 0}
 };
 EstadoJogo gpontuacao = {{0, 0}, {0, 0}, 0, VLR_NORMAL, {0, 0}};
-int gvencedor_partida = -1;
-int gvencedor_jogo = -1;
-int gvencedor_queda = -1;
-uint8_t gturno = 0;
-uint8_t gmao = 0;
+int8_t gvencedor_partida = -1;
+int8_t gvencedor_jogo = -1;
+int8_t gvencedor_queda = -1;
+int8_t gturno = -1;
+int8_t gmao = -1;
 FASE_JOGO gfase;
 JOGADORES_ATIVOS gjogadores_ativos;
 Carta gjogadores_cartas[NUM_JOGADORES][NUM_CARTAS_MAO];
 int gjogadores_cartas_jogadas[NUM_JOGADORES][NUM_CARTAS_MAO];
-Carta gcarta_mais_forte;
-int gjogador_carta_mais_forte = -1;
+Carta gcarta_mais_forte = {'-', BARALHO_VIRADO, 0, 0};
+int8_t gjogador_carta_mais_forte = -1;
 int gempate_parcial = 0;
 
 /* FUNÇÕES */

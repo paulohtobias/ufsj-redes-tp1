@@ -9,6 +9,10 @@ int main(int argc, char *argv[]) {
 	int chat_socket_fd = criar_socket_servidor();
 
 	pthread_create(&thread_escrita, NULL, t_escrita, NULL);
+
+	for (i = 0; i < NUM_JOGADORES; i++) {
+		jogadres[i].id = -1;
+	}
 	
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		//Faz conexão inicial com o cliente.

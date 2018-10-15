@@ -64,17 +64,17 @@ char pontuacao_str[300];
 
 extern Carta gbaralho[NUM_CARTAS];
 extern EstadoJogo gpontuacao;
-extern int gvencedor_jogo;
-extern int gvencedor_partida;
-extern int gvencedor_queda;
-extern uint8_t gturno;
-extern uint8_t gmao;
+extern int8_t gvencedor_jogo;
+extern int8_t gvencedor_partida;
+extern int8_t gvencedor_queda;
+extern int8_t gturno;
+extern int8_t gmao;
 extern FASE_JOGO gfase;
 extern JOGADORES_ATIVOS gjogadores_ativos;
 extern Carta gjogadores_cartas[NUM_JOGADORES][NUM_CARTAS_MAO];
 extern int gjogadores_cartas_jogadas[NUM_JOGADORES][NUM_CARTAS_MAO];
 extern Carta gcarta_mais_forte;
-extern int gjogador_carta_mais_forte;
+extern int8_t gjogador_carta_mais_forte;
 extern int gempate_parcial;
 
 /* FUNÇÕES */

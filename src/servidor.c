@@ -72,13 +72,6 @@ void *t_leitura(void *args) {
 	pthread_cond_signal(&cond_new_msg);
 	pthread_mutex_unlock(&mutex_broadcast);
 
-	//Aguardando todos os jogadores
-	pthread_mutex_lock(&mutex_init);
-	while (num_jogadores < NUM_JOGADORES) {
-		pthread_cond_wait(&cond_init, &mutex_init);
-	}
-	pthread_mutex_unlock(&mutex_init);
-
 	// Loop principal
 	while (1) {
 		#ifdef DEBUG
@@ -164,9 +157,7 @@ void *t_leitura(void *args) {
 				}
 			}
 			pthread_mutex_unlock(&mutex_jogo);
-		}
-
-		if (mensagem.tipo == SMT_CHAT) {
+		} else if (mensagem.tipo == SMT_CHAT) {
 			pthread_mutex_lock(&mutex_broadcast);
 			
 			mensagem_chat(&gmensagem, NULL, 0);
@@ -196,7 +187,7 @@ void *t_escrita(void *args) {
 		//Envia a mensagem aos clientes.
 		pthread_mutex_lock(&mutex_broadcast);
 		for (i = 0; i < NUM_JOGADORES; i++) {
-			if ((1 << i) & new_msg) {
+			if (((1 << i) & new_msg) && jogadres[i].id != -1) {
 				#ifdef DEBUG
 				printf("[Servidor] enviando msg (%d) para %d\n", gmensagem.tipo, i);
 				#endif //DEBUG

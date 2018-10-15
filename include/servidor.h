@@ -14,7 +14,7 @@ typedef struct ThreadJogador {
 } ThreadJogador;
 
 typedef struct Jogador {
-	uint8_t id;			// [0-4]
+	int8_t id;			// [0-4]
 	int socket_fd;
 
 	EstadoJogador estado;
