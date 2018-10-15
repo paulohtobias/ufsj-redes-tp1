@@ -1,5 +1,12 @@
 #include "baralho.h"
 
+void carta_virar(Carta *carta) {
+	carta->numero = '-';
+	carta->naipe = BARALHO_VIRADO;
+	carta->poder = 0;
+	carta->visivel = 0;
+}
+
 void embaralhar(Carta *baralho, int qtd_cartas) {
 	int i;
 	Carta baralho_antigo[qtd_cartas];

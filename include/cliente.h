@@ -4,6 +4,8 @@
 #include "conexao.h"
 #include <gtk/gtk.h>
 
+Carta cartas[NUM_CARTAS_MAO];
+
 int ssfd;
 pthread_t thread;
 

@@ -1,5 +1,6 @@
 #include "servidor.h"
 
+pthread_mutex_t mutex_jogo = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_init = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond_init = PTHREAD_COND_INITIALIZER;
 int num_jogadores = 0;
@@ -37,6 +38,10 @@ void jogador_init(Jogador *jogador, uint8_t id, int sfd) {
 	jogador->id = id;
 	jogador->socket_fd = sfd;
 
+	jogador->estado.id = id;
+	jogador->estado.qtd_cartas_mao = 0;
+	carta_virar(&jogador->estado.carta_jogada);
+
 	jogador->thread.new_msg = 0;
 	pthread_mutex_init(&jogador->thread.new_msg_mutex, NULL);
 	pthread_cond_init(&jogador->thread.new_msg_cond, NULL);
@@ -59,12 +64,20 @@ void *t_leitura(void *args) {
 		cores_times[jogador->id], jogador->id
 	);
 
+	//Mensagem de boas vindas
 	pthread_mutex_lock(&mutex_broadcast);
 	mensagem_bem_vindo(&gmensagem);
 	mensagem_definir_textof(&gmensagem, "Bem vindo, %s! Aguardando todos os jogadores...", jogador_nome);
 	new_msg = MSG_JOGADOR(jogador->id);
 	pthread_cond_signal(&cond_new_msg);
 	pthread_mutex_unlock(&mutex_broadcast);
+
+	//Aguardando todos os jogadores
+	pthread_mutex_lock(&mutex_init);
+	while (num_jogadores < NUM_JOGADORES) {
+		pthread_cond_wait(&cond_init, &mutex_init);
+	}
+	pthread_mutex_unlock(&mutex_init);
 
 	// Loop principal
 	while (1) {
@@ -86,6 +99,72 @@ void *t_leitura(void *args) {
 		#ifdef DEBUG
 		mensagem_print(&mensagem, "");
 		#endif //DEBUG
+
+		if (mensagem.tipo == SMT_SEU_TURNO) {
+			pthread_mutex_lock(&mutex_jogo);
+			if (gmao == jogador->id) {
+				int indice_carta;
+				mensagem_obter_carta(&mensagem, &indice_carta);
+
+				if (indice_carta < NUM_CARTAS_MAO && gjogadores_cartas_jogadas[jogador->id][indice_carta] == 0) {
+					//Marca a carta como jogada.
+					gjogadores_cartas_jogadas[jogador->id][indice_carta] = 1;
+					
+					//Atualiza o estado do jogador.
+					jogador->estado.carta_jogada = gjogadores_cartas[jogador->id][indice_carta];
+					jogador->estado.qtd_cartas_mao--;
+
+					//Atualiza a carta mais forte
+					if (jogador->estado.carta_jogada.poder > gcarta_mais_forte.poder) {
+						gcarta_mais_forte = jogador->estado.carta_jogada;
+						gjogador_carta_mais_forte = jogador->id;
+						gempate_parcial = 0;
+					} else if (jogador->estado.carta_jogada.poder == gcarta_mais_forte.poder) {
+						gcarta_mais_forte = jogador->estado.carta_jogada;
+						gjogador_carta_mais_forte = jogador->id;
+						gempate_parcial = 1;
+					}
+
+					pthread_mutex_lock(&mutex_broadcast);
+
+					gturno++;
+					//Verifica se chegou no fim da rodada.
+					if (gturno == NUM_JOGADORES) {
+						gvencedor_partida = terminar_rodada();
+
+						if (gvencedor_partida == -1) {
+							mensagem_fim_rodada(&gmensagem);
+						} else {
+							gvencedor_jogo = terminar_partida();
+							
+							if (gvencedor_jogo == -1) {
+								mensagem_fim_partida(&gmensagem);
+							} else {
+								gvencedor_queda = terminar_jogo();
+
+								if (gvencedor_queda == -1) {
+									mensagem_fim_jogo(&gmensagem);
+								} else {
+									mensagem_fim_queda(&mensagem);
+								}
+							}
+						}
+					} else {
+						mensagem_atualizar_estado(&gmensagem, 1, &jogador->estado, 0, NULL);
+					}
+
+					new_msg = MSG_TODOS;
+					pthread_cond_signal(&cond_new_msg);
+					pthread_mutex_unlock(&mutex_broadcast);
+				} else if (indice_carta == NUM_CARTAS_MAO) {
+					// PEDIU TRUCO.
+					#ifdef DEBUG
+					printf("Jogador %d pediu truco\n", jogador->id);
+					#endif //DEBUG
+				}
+			}
+			pthread_mutex_unlock(&mutex_jogo);
+		}
 
 		if (mensagem.tipo == SMT_CHAT) {
 			pthread_mutex_lock(&mutex_broadcast);

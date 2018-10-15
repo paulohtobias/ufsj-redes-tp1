@@ -17,12 +17,15 @@ typedef struct Jogador {
 	uint8_t id;			// [0-4]
 	int socket_fd;
 
+	EstadoJogador estado;
+
 	ThreadJogador thread;
 } Jogador;
 
 
 /* VARIÁVEIS GLOBAIS*/
 pthread_t thread_escrita;
+extern pthread_mutex_t mutex_jogo;
 extern pthread_mutex_t mutex_broadcast;
 extern pthread_mutex_t mutex_new_msg;
 extern pthread_cond_t cond_new_msg;

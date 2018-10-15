@@ -39,12 +39,6 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="xpad">5</property>
-                    <property name="label" translatable="yes">&lt;b&gt;Partida atual&lt;/b&gt;: TRUCO! (4 pontos)
-&lt;b&gt;Jogos-Pontos&lt;/b&gt;:
-	&lt;span font_weight='bold' color='blue'&gt;Time 1: 1-2&lt;/span&gt;
-	&lt;span font_weight='bold' color='red'&gt;Time 2: 0-4&lt;/span&gt;
-
-&lt;b&gt;Mão&lt;/b&gt;: &lt;span font_weight='bold' color='#1E90FF'&gt;Jogador 2&lt;/span&gt;</property>
                     <property name="use_markup">True</property>
                     <property name="track_visited_links">False</property>
                     <property name="xalign">0</property>

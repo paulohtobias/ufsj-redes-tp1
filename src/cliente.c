@@ -9,10 +9,15 @@ void *t_receive(void *arg) {
 	Mensagem mensagem;
 
 	//Jogo
+	EstadoJogo estado_jogo;
+	EstadoJogador estado_jogadores[NUM_JOGADORES];
+
+	//GUI - Jogo
+	GtkWidget *jogo_estado_label = GTK_WIDGET(gtk_builder_get_object(builder, "jogo_estado_label"));
 	GtkWidget *jogo_textview_log = GTK_WIDGET(gtk_builder_get_object(builder, "jogo_textview_log"));
 	GtkWidget *jogo_mensagem_servidor_label = GTK_WIDGET(gtk_builder_get_object(builder, "jogo_mensagem_servidor_label"));
 
-	//Chat
+	//GUI - Chat
 	GtkWidget *chat_textview_log = GTK_WIDGET(gtk_builder_get_object(builder, "chat_textview_log"));
 	
 	//Extra
@@ -29,8 +34,21 @@ void *t_receive(void *arg) {
 			#ifdef DEBUG
 			mensagem_print(&mensagem, "CHEGOU DO SERVIDOR: ");
 			#endif
+
+			//Atualizando o estado, caso necessário.
+			if (mensagem.atualizar_pontuacao) {
+				mensagem_obter_pontuacao(&mensagem, &estado_jogo);
+				pontuacao_str_atualizar(&estado_jogo);
+				gtk_label_set_markup(GTK_LABEL(jogo_estado_label), pontuacao_str);
+			}
+			if (mensagem.estados > 0) {
+				mensagem_obter_estado_jogadores(&mensagem, estado_jogadores);
+			}
 			
 			if (mensagem.tipo == SMT_BEM_VINDO) {
+				gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), mensagem_obter_texto(&mensagem));
+			}
+			else if (mensagem.tipo == SMT_PROCESSANDO) {
 				gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), mensagem_obter_texto(&mensagem));
 			}
 			else if (mensagem.tipo == SMT_CHAT) {

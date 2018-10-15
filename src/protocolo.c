@@ -1,13 +1,14 @@
 #include "protocolo.h"
 
 char mensagem_tipo_str[__SMT_QTD][64] = {
-	"Bem vindo ao truco! Informe seu nome",
-	"Processando",
-	"Deseja queimar sua mão?",
+	"Houve um erro no sistema.",
+	"Bem vindo ao truco!",
+	"Processando.",
 	"Estou te enviando suas cartas.",
 	"Seu turno.",
 	"Alguém pediu truco|seis|nove|doze.",
-	"Houve empate. Me mostre sua maior carta."
+	"Houve empate. Me mostre sua maior carta.",
+	"Fim da rodada.",
 	"Fim da partida.",
 	"Fim do jogo.",
 	"Fim da queda.",
@@ -55,12 +56,8 @@ void mensagem_processando(Mensagem *mensagem, uint8_t qtd_estados, const EstadoJ
 	mensagem_definir(mensagem, SMT_PROCESSANDO, qtd_estados, estado_jogadores, atualizar_pontuacao, estado_jogo, (uint8_t *) texto, tamanho_texto);
 }
 
-void mensagem_queimar_mao(Mensagem *mensagem) {
-	mensagem_simples(mensagem, SMT_QUER_QUEIMAR_MAO);
-}
-
-void mensagem_enviando_cartas(Mensagem *mensagem, const EstadoJogador *estado_jogador) {
-	mensagem_definir(mensagem, SMT_ENVIANDO_CARTAS, 1, estado_jogador, 0, NULL, NULL, 0);
+void mensagem_enviando_cartas(Mensagem *mensagem, const Carta cartas[NUM_CARTAS_MAO]) {
+	mensagem_definir(mensagem, SMT_ENVIANDO_CARTAS, 0, NULL, 0, NULL, (uint8_t *) cartas, NUM_CARTAS_MAO * sizeof(Carta));
 }
 
 void mensagem_seu_turno(Mensagem *mensagem) {
@@ -73,6 +70,10 @@ void mensagem_truco(Mensagem *mensagem) {
 
 void mensagem_empate(Mensagem *mensagem) {
 	mensagem_simples(mensagem, SMT_EMPATE);
+}
+
+void mensagem_fim_rodada(Mensagem *mensagem) {
+	mensagem_simples(mensagem, SMT_FIM_RODADA);
 }
 
 void mensagem_fim_partida(Mensagem *mensagem) {
@@ -104,6 +105,28 @@ void mensagem_definir_textof(Mensagem *mensagem, const char *format, ...) {
 
 void mensagem_print(const Mensagem *mensagem, const char *titulo) {
 	printf("%s Mensagem [%2d (%s)]: '%s'\n", titulo, mensagem->tipo, mensagem_tipo_str[mensagem->tipo], mensagem_obter_texto(mensagem));
+}
+
+void mensagem_obter_pontuacao(const Mensagem *mensagem, EstadoJogo *pontuacao) {
+	int indice = mensagem->estados * sizeof(EstadoJogador);
+
+	memcpy(pontuacao, &mensagem->dados[indice], sizeof(EstadoJogo));
+}
+
+void mensagem_obter_estado_jogadores(const Mensagem *mensagem, EstadoJogador estado_jogadores[NUM_JOGADORES]) {
+	int i;
+	for (i = 0; i < mensagem->estados; i++) {
+		EstadoJogador estado = ((EstadoJogador *)mensagem->dados)[i];
+		estado_jogadores[estado.id] = estado;
+	}
+}
+
+void mensagem_obter_carta(const Mensagem *mensagem, int *indice_carta) {
+	memcpy(indice_carta, mensagem->dados, sizeof(Carta));
+}
+
+void mensagem_obter_cartas(const Mensagem *mensagem, Carta cartas[NUM_CARTAS_MAO]) {
+	memcpy(cartas, mensagem->dados, NUM_CARTAS_MAO * sizeof(Carta));
 }
 
 char *mensagem_obter_texto(const Mensagem *mensagem) {

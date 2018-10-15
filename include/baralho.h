@@ -7,19 +7,22 @@
 #include <stdint.h>
 
 typedef enum NAIPE {
+	BARALHO_VIRADO,
 	ESPADAS,
 	PAUS,
 	COPAS,
 	OUROS,
-	CORINGA,
+	CORINGA
 } NAIPE;
 
 typedef struct Carta {
+	char numero;      // [A|2-7|J|Q|K|*|-]
 	NAIPE naipe;
-	char valor; // [A|2-7|J|Q|K|*]
-	uint8_t poder; // [0-14]
-	uint8_t visivel;
+	uint8_t poder;    // [0-15]
+	uint8_t visivel;  // 0 ou 1
 } Carta;
+
+void carta_virar(Carta *carta);
 
 void embaralhar(Carta *baralho, int qtd_cartas);
 

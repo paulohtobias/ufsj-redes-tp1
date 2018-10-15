@@ -20,13 +20,14 @@
 
 /* ENUMS E TIPOS */
 typedef enum MENSAGEM_TIPO {
+	SMT_ERRO,
 	SMT_BEM_VINDO,
 	SMT_PROCESSANDO,
-	SMT_QUER_QUEIMAR_MAO,
 	SMT_ENVIANDO_CARTAS,
 	SMT_SEU_TURNO,
 	SMT_TRUCO,
 	SMT_EMPATE,
+	SMT_FIM_RODADA,
 	SMT_FIM_PARTIDA,
 	SMT_FIM_JOGO,
 	SMT_FIM_QUEDA,
@@ -68,9 +69,7 @@ void mensagem_bem_vindo(Mensagem *mensagem);
 
 void mensagem_processando(Mensagem *mensagem, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_pontuacao, const EstadoJogo *estado_jogo, char *texto, uint8_t tamanho_texto);
 
-void mensagem_queimar_mao(Mensagem *mensagem);
-
-void mensagem_enviando_cartas(Mensagem *mensagem, const EstadoJogador *estado_jogador);
+void mensagem_enviando_cartas(Mensagem *mensagem, const Carta cartas[NUM_CARTAS_MAO]);
 
 void mensagem_seu_turno(Mensagem *mensagem);
 
@@ -78,10 +77,16 @@ void mensagem_truco(Mensagem *mensagem);
 
 void mensagem_empate(Mensagem *mensagem);
 
+//todo: passar o time vencedor
+void mensagem_fim_rodada(Mensagem *mensagem);
+
+//todo: passar o time vencedor
 void mensagem_fim_partida(Mensagem *mensagem);
 
+//todo: passar o time vencedor
 void mensagem_fim_jogo(Mensagem *mensagem);
 
+//todo: passar o time vencedor
 void mensagem_fim_queda(Mensagem *mensagem);
 
 void mensagem_chat(Mensagem *mensagem, char *texto, uint8_t tamanho_texto);
@@ -89,6 +94,14 @@ void mensagem_chat(Mensagem *mensagem, char *texto, uint8_t tamanho_texto);
 void mensagem_definir_textof(Mensagem *mensagem, const char *format, ...);
 
 void mensagem_print(const Mensagem *mensagem, const char *titulo);
+
+void mensagem_obter_pontuacao(const Mensagem *mensagem, EstadoJogo *pontuacao);
+
+void mensagem_obter_estado_jogadores(const Mensagem *mensagem, EstadoJogador estado_jogadores[NUM_JOGADORES]);
+
+void mensagem_obter_carta(const Mensagem *mensagem, int *indice_carta);
+
+void mensagem_obter_cartas(const Mensagem *mensagem, Carta cartas[NUM_CARTAS_MAO]);
 
 char *mensagem_obter_texto(const Mensagem *mensagem);
 
