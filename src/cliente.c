@@ -66,8 +66,8 @@ void t_send(GtkEntry *entry, gpointer user_data) {
 	Mensagem mensagem;
 	memcpy(&mensagem, user_data, sizeof mensagem);
 
-	strncpy((char *) mensagem.dados, gtk_entry_get_text(entry), BUFF_SIZE);
-	mensagem.tamanho_dados = strlen((char *) mensagem.dados) + 1;
+	mensagem_definir_textof(&mensagem, "%s", gtk_entry_get_text(entry));
+
 	int retval = write(ssfd, &mensagem, mensagem_obter_tamanho(&mensagem));
 	if (retval == -1) {
 		handle_error(1, "thread_escrita-write");

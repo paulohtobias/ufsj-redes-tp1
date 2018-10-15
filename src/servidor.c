@@ -95,7 +95,7 @@ void *t_leitura(void *args) {
 
 		if (mensagem.tipo == SMT_SEU_TURNO) {
 			pthread_mutex_lock(&mutex_jogo);
-			if (gmao == jogador->id) {
+			if (FJ_TURNO && gmao == jogador->id) {
 				int indice_carta;
 				mensagem_obter_carta(&mensagem, &indice_carta);
 

@@ -3,7 +3,12 @@
 <interface>
   <requires lib="gtk+" version="3.12"/>
   <object class="GtkWindow" id="window">
+    <property name="visible">True</property>
     <property name="can_focus">False</property>
+    <property name="has_focus">True</property>
+    <property name="is_focus">True</property>
+    <property name="has_default">True</property>
+    <property name="receives_default">True</property>
     <property name="title" translatable="yes">Truco</property>
     <child>
       <object class="GtkBox" id="main_box">

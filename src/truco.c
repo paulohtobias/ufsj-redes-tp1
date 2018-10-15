@@ -72,7 +72,7 @@ int8_t gvencedor_jogo = -1;
 int8_t gvencedor_queda = -1;
 int8_t gturno = -1;
 int8_t gmao = -1;
-FASE_JOGO gfase;
+FASE_JOGO gfase = FJ_AGUARDANDO_INICIO;
 JOGADORES_ATIVOS gjogadores_ativos;
 Carta gjogadores_cartas[NUM_JOGADORES][NUM_CARTAS_MAO];
 int gjogadores_cartas_jogadas[NUM_JOGADORES][NUM_CARTAS_MAO];
