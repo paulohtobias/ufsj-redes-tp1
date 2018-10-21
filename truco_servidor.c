@@ -66,7 +66,6 @@ int main(int argc, char *argv[]) {
 					#ifdef DEBUG
 					printf("Enviando cartas para o jogador %d\n", jogadores[i].id);
 					#endif //DEBUG
-					//pthread_cond_signal(&cond_new_msg);
 					enviar_mensagem(&gmensagem, new_msg);
 					pthread_mutex_unlock(&mutex_broadcast);
 				}
@@ -76,7 +75,6 @@ int main(int argc, char *argv[]) {
 				pthread_mutex_lock(&mutex_broadcast);
 				mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
 				new_msg = MSG_TODOS;
-				//pthread_cond_signal(&cond_new_msg);
 				enviar_mensagem(&gmensagem, new_msg);
 				pthread_mutex_unlock(&mutex_broadcast);
 
@@ -107,7 +105,6 @@ int main(int argc, char *argv[]) {
 						pthread_mutex_lock(&mutex_broadcast);
 						mensagem_seu_turno(&gmensagem);
 						new_msg = MSG_JOGADOR(gestado.jogador_atual);
-						//pthread_cond_signal(&cond_new_msg);
 						enviar_mensagem(&gmensagem, new_msg);
 						pthread_mutex_unlock(&mutex_broadcast);
 						pthread_mutex_unlock(&mutex_jogo);
@@ -178,7 +175,6 @@ int main(int argc, char *argv[]) {
 							pthread_mutex_lock(&mutex_broadcast);
 							mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
 							new_msg = MSG_TODOS;
-							//pthread_cond_signal(&cond_new_msg);
 							enviar_mensagem(&gmensagem, new_msg);
 							pthread_mutex_unlock(&mutex_broadcast);
 
@@ -220,7 +216,6 @@ int main(int argc, char *argv[]) {
 				pthread_mutex_lock(&mutex_broadcast);
 				mensagem_fim_partida(&gmensagem, gvencedor_partida);
 				new_msg = MSG_TODOS;
-				//pthread_cond_signal(&cond_new_msg);
 				enviar_mensagem(&gmensagem, new_msg);
 				pthread_mutex_unlock(&mutex_broadcast);
 			}

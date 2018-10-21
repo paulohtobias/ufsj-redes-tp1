@@ -52,15 +52,7 @@ void *t_leitura(void *args) {
 	Jogador *jogador = args;
 
 	int retval;
-	char jogador_nome[128];
 	Mensagem mensagem;
-
-	//Setando o nome do jogador
-	sprintf(
-		jogador_nome,
-		jogador_nome_fmt,
-		cores_times[jogador->id], jogador->id
-	);
 
 	//Mensagem de boas vindas
 	pthread_mutex_lock(&mutex_broadcast);
@@ -153,15 +145,10 @@ void *t_leitura(void *args) {
 		} else if (mensagem.tipo == SMT_CHAT) {
 			pthread_mutex_lock(&mutex_broadcast);
 			
-			mensagem_chat(&gmensagem, NULL, 0);
-			mensagem_definir_textof(&gmensagem, "%s: %s\n", jogador_nome, mensagem.dados);
-			
+			mensagem_chat(&gmensagem, mensagem_obter_texto(&mensagem, NULL), mensagem.tamanho_dados);
 			new_msg = MSG_TODOS;
 			enviar_mensagem(&gmensagem, new_msg);
 			pthread_mutex_unlock(&mutex_broadcast);
-		}
-
-		if (jogador->thread.new_msg) {
 		}
 	}
 }

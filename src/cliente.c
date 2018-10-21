@@ -162,7 +162,8 @@ void t_send(GtkEntry *entry, gpointer user_data) {
 			}
 		}
 	} else {
-		mensagem_chat(mensagem, input, tamanho_input + 1);
+		mensagem_chat(mensagem,NULL, 0);
+		mensagem_definir_textof(mensagem, "%s: %s\n", jogador_nome, input);
 		msg_valida = 1;
 
 		#ifdef DEBUG
@@ -182,7 +183,7 @@ void t_send(GtkEntry *entry, gpointer user_data) {
 	int retval = write(ssfd, mensagem, mensagem_obter_tamanho(mensagem));
 	
 	#ifdef DEBUG
-	printf("[cliente %d] escreveu %d bytes da msg %d\n", retval, mensagem->tipo);
+	printf("escreveu %d bytes da msg %d\n", retval, mensagem->tipo);
 	#endif //DEBUG
 	
 	pthread_mutex_unlock(&mutex_mensagem);
