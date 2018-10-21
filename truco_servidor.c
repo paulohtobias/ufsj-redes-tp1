@@ -4,7 +4,12 @@
 int main(int argc, char *argv[]) {
 	int i, j;
 
-	srand((unsigned) time(NULL));
+	unsigned int semente = (unsigned) time(NULL);
+	srand(semente);
+
+	#ifdef DEBUG
+	printf("SEMENTE: %d\n", semente);
+	#endif //DEBUG
 
 	int chat_socket_fd = criar_socket_servidor();
 
@@ -19,13 +24,9 @@ int main(int argc, char *argv[]) {
 		jogador_init(jogadores + i, i, jsfd);
 	}
 
-	//sleep(3);
-	printf("\n\n");
-
 	pthread_mutex_lock(&mutex_jogo);
-	gvencedor_jogo = -1;
 	gjogadores_ativos = JA_JOGADOR(gestado.jogador_atual);
-	gmao = rand() % NUM_JOGADORES;
+	gjogador_baralho = rand() % NUM_JOGADORES;
 	pthread_mutex_unlock(&mutex_jogo);
 	
 	//Iniciando o jogo.
@@ -34,21 +35,28 @@ int main(int argc, char *argv[]) {
 		pthread_cond_wait(&cond_init, &mutex_init);
 	}
 	pthread_mutex_unlock(&mutex_init);
+
+	int queda, jogo, partida, rodada, turno;
 	
 	//Loop infinito até que os jogadores fechem o jogo.
-	while (1) {
+	for (queda = 0; ; queda++) {
 		
-		//While da queda. Cada iteração é um jogo.
-		while (1) {
+		//For da queda. Cada iteração é um jogo (melhor de 3).
+		for (jogo = 0; jogo < 3; jogo++) {
 
-			//While do jogo: cada iteração é uma partida.
-			while (1) {
+			//For do jogo: cada iteração é uma partida (até alguém somar 12+ pontos).
+			for (partida = 0; ; partida++) {
+				pthread_mutex_lock(&mutex_jogo);
+				gestado.empate = 0;
+				gvencedor_partida = -1;
+				int rodadas = 0;
+				gmao = gjogador_baralho;
+				gjogador_baralho = (gjogador_baralho + 1) % NUM_JOGADORES;
+
 				//Embaralha as cartas.
 				embaralhar(gbaralho, NUM_CARTAS, 10);
 				
 				//Muda a fase do jogo.
-				pthread_mutex_lock(&mutex_jogo);
-				gestado.empate_parcial = 0;
 				gfase = FJ_ENVIANDO_CARTAS;
 				
 				//Distribui as cartas a todos os jogadores.
@@ -59,14 +67,11 @@ int main(int argc, char *argv[]) {
 					}
 					carta_virar(&gestado_jogadores[i].carta_jogada);
 					gestado_jogadores[i].qtd_cartas_mao = 3;
-					
+
 					//Avisa o jogador.
 					pthread_mutex_lock(&mutex_broadcast);
 					mensagem_definir_cartas(&gmensagem, gjogadores_cartas[i]);
 					new_msg = MSG_JOGADOR(jogadores[i].id);
-					#ifdef DEBUG
-					printf("Enviando cartas para o jogador %d\n", jogadores[i].id);
-					#endif //DEBUG
 					enviar_mensagem(&gmensagem, new_msg);
 					pthread_mutex_unlock(&mutex_broadcast);
 				}
@@ -79,14 +84,11 @@ int main(int argc, char *argv[]) {
 				enviar_mensagem(&gmensagem, new_msg);
 				pthread_mutex_unlock(&mutex_broadcast);
 
-				//While da partida: cada iteração é uma rodada (JOGO)
+				//For da partida: cada iteração é uma rodada
 				//iniciar_rodada();
-				int rodadas = 0;
-				while (1) {
-					rodadas++;
-
+				for (rodada = 0; rodada < 3; rodada++) {
 					pthread_mutex_lock(&mutex_jogo);
-					gturno = 0;
+					turno = 0;
 					gestado.empate_parcial = 0;
 					gestado.jogador_carta_mais_forte = -1;
 					carta_virar(&gestado.carta_mais_forte);
@@ -150,14 +152,15 @@ int main(int argc, char *argv[]) {
 								printf("%d pediu truco na mao de 10\n", gestado.jogador_atual);
 								#endif //DEBUG
 								
-								gvencedor_partida = !gestado.jogador_atual;
+								gvencedor_partida = !JOGADOR_TIME(gestado.jogador_atual);
 								pthread_mutex_unlock(&mutex_jogo);
 								break;
 							}
 
+							//todo: criar uma função avisar_truco(jogador_id) no servidor
 							//Avisa para todos que o jogador pediu truco.
 							pthread_mutex_lock(&mutex_broadcast);
-							mensagem_processando(&gmensagem, "Pediu truco. Aguardando resposta do time adversário.");
+							mensagem_processando(&gmensagem, "Seu time pediu truco|seis|nove|doze. Aguardando resposta do time adversário.");
 							new_msg = MSG_TIME(gestado.jogador_atual);
 							enviar_mensagem(&gmensagem, new_msg);
 							pthread_mutex_unlock(&mutex_broadcast);							
@@ -188,7 +191,7 @@ int main(int argc, char *argv[]) {
 								printf("o time %d correu do truco|seis|nove|doze\n", !gestado.jogador_atual);
 								#endif //DEBUG
 								
-								gvencedor_partida = gestado.jogador_atual;
+								gvencedor_partida = JOGADOR_TIME(gestado.jogador_atual);
 								pthread_mutex_unlock(&mutex_jogo);
 								break;
 							} else if (gresposta[0] == RSP_SIM) {
@@ -208,7 +211,25 @@ int main(int argc, char *argv[]) {
 
 								pthread_mutex_unlock(&mutex_jogo);
 								continue;
-							} else {
+							} else { //Se cair aqui, então a repoosta foi pra aumentar a aposta.
+								//todo: criar uma função avisar_truco(jogador_id) no servidor
+								//Avisa para o time que o jogador pediu truco.
+								pthread_mutex_lock(&mutex_broadcast);
+								mensagem_processando(&gmensagem, "Seu time pediu truco|seis|nove|doze. Aguardando resposta do time adversário.");
+								uint8_t time_adversario = MSG_TIME_ADV(gestado.jogador_atual);
+								gjogadores_ativos = time_adversario;
+								enviar_mensagem(&gmensagem, time_adversario);
+								pthread_mutex_unlock(&mutex_broadcast);							
+								
+								//Avisa ao outro time que o jogador pediu truco e espera pela reposta.
+								pthread_mutex_lock(&mutex_broadcast);
+								gresposta[0] = gresposta[1] = RSP_INDEFINIDO;
+								mensagem_truco(&gmensagem, gestado.jogador_atual);
+								new_msg = MSG_TIME(gestado.jogador_atual);
+								enviar_mensagem(&gmensagem, new_msg);
+								pthread_mutex_unlock(&mutex_broadcast);
+								pthread_mutex_unlock(&mutex_jogo);
+
 								#ifdef DEBUG
 								printf("TO-DO: o time %d aumentou!! truco|seis|nove|doze\n", !gestado.jogador_atual);
 								#endif //DEBUG
@@ -247,11 +268,11 @@ int main(int argc, char *argv[]) {
 							enviar_mensagem(&gmensagem, new_msg);
 							pthread_mutex_unlock(&mutex_broadcast);
 
-							gturno++;
+							turno++;
 							gestado.jogador_atual = (gestado.jogador_atual + 1) % NUM_JOGADORES;
 
 							//Verifica se todos os jogadores já jogaram (fim da rodada).
-							if (gturno == NUM_JOGADORES) {
+							if (turno == NUM_JOGADORES) {
 								#ifdef DEBUG
 								printf("Fim de turno\n");
 								#endif //DEBUG
@@ -266,7 +287,7 @@ int main(int argc, char *argv[]) {
 					pthread_mutex_lock(&mutex_jogo);
 					//Verifica se deu empate. Se for na primeira rodada ou se o desempate da segunda
 					//terminar empatado, então os jogadores devem mostrar sua maior carta.
-					if (gestado.empate_parcial && (rodadas == 1 || gestado.empate)) {
+					if (gestado.empate_parcial && (rodada == 0 || gestado.empate)) {
 						gestado.empate = 1;
 						
 						//Informa que houve empate.
@@ -282,7 +303,7 @@ int main(int argc, char *argv[]) {
 					} else {
 						gfase = FJ_FIM_RODADA;
 
-						if (rodadas == 1) {
+						if (rodada == 0) {
 							gvencedor_primeira_rodada = JOGADOR_TIME(gestado.jogador_carta_mais_forte);
 
 							#ifdef DEBUG
@@ -328,8 +349,6 @@ int main(int argc, char *argv[]) {
 
 				pthread_mutex_lock(&mutex_jogo);
 				//Verificando se houve vencedor na partida.
-				//TODO: olhar essa função.
-				getchar();
 				gvencedor_jogo = terminar_partida(gvencedor_partida);
 
 				#ifdef DEBUG

@@ -82,6 +82,7 @@ extern Carta gbaralho[NUM_CARTAS];
 extern EstadoJogo gestado;
 int8_t gturno;
 int8_t gmao;
+int8_t gjogador_baralho;
 uint8_t gfase;
 extern int8_t gvencedor_primeira_rodada;
 extern int8_t gvencedor_partida;
