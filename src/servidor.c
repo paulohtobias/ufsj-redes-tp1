@@ -75,8 +75,7 @@ void *t_leitura(void *args) {
 		#endif //DEBUG
 
 		//Espera comandos do jogador.
-		memset(&mensagem, 0, sizeof mensagem);
-		retval = read(jogador->socket_fd, &mensagem, sizeof mensagem);
+		retval = mensagem_receber(jogador->socket_fd, &mensagem);
 		if (retval == -1) {
 			handle_error(1, "thread_leitura-read");
 		} else if (retval == 0) {

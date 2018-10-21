@@ -18,6 +18,7 @@ char mensagem_tipo_str[__SMT_QTD][BUFF_SIZE] = {
 
 
 int mensagem_receber(int sfd, Mensagem *mensagem) {
+	memset(mensagem, 0, sizeof(Mensagem));
 	return read(sfd, mensagem, sizeof(Mensagem));
 }
 

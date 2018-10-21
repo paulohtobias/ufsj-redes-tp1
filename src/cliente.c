@@ -32,8 +32,7 @@ void *t_receive(void *arg) {
 		printf("[jogador %d] read\n", jogador_id);
 		#endif //DEBUG
 
-		memset(&mensagem, 0, sizeof mensagem);
-		retval = read(ssfd, &mensagem, sizeof mensagem);
+		retval = mensagem_receber(ssfd, &mensagem);
 
 		#ifdef DEBUG
 		printf("\033[0;31m"); 
@@ -69,7 +68,13 @@ void *t_receive(void *arg) {
 				pthread_mutex_unlock(&mutex_mensagem);
 				
 				if (mensagem.tipo == SMT_PROCESSANDO) {
-					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), mensagem_obter_texto(&mensagem, texto));
+					mensagem_obter_texto(&mensagem, texto);
+
+					#ifdef DEBUG
+					printf("PROCESSANDO MSG: '%s'\n", texto);
+					#endif //DEBUG
+
+					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), texto);
 				} else if (mensagem.tipo == SMT_BEM_VINDO) {
 					//Pegando o id e setando o nome.
 					mensagem_obter_id(&mensagem, &jogador_id);

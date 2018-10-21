@@ -4,7 +4,12 @@
 int main(int argc, char *argv[]) {
 	int i, j;
 
-	unsigned int semente = (unsigned) time(NULL);
+	unsigned int semente = 1540161191;
+	if (argc > 1) {
+		semente = (unsigned) atoi(argv[1]);
+	} else {
+		semente = (unsigned) time(NULL);
+	}
 	srand(semente);
 
 	#ifdef DEBUG
@@ -357,7 +362,7 @@ int main(int argc, char *argv[]) {
 
 				if (gvencedor_jogo >= 0) {
 					pthread_mutex_unlock(&mutex_jogo);
-					exit(0);
+					//exit(0);
 					break;
 				}
 				pthread_mutex_unlock(&mutex_jogo);
