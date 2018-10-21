@@ -26,7 +26,7 @@ Carta gbaralho[NUM_CARTAS] = {
 	{'4', PAUS, 15, 0},
 	{'7', COPAS, 14, 0},
 	{'A', ESPADAS, 13, 0},
-	{'7', COPAS, 12, 0},
+	{'7', OUROS, 12, 0},
 	{'*', CORINGA, 11, 0},
 	
 	{'3', ESPADAS, 10, 0},
@@ -75,11 +75,14 @@ Carta gbaralho[NUM_CARTAS] = {
 	{'4', COPAS, 1, 0},
 	{'4', OUROS, 1, 0}
 };
-EstadoJogo gestado = {{0, 0}, {0, 0}, {0, 0}, -1, -1, 0, 0, {'-', BARALHO_VIRADO, 0, 0}, -1, 0};
+EstadoJogo gestado = {{0, 0}, {0, 0}, {0, 0}, -1, 0, 0, -1, -1, 0, {'-', BARALHO_VIRADO, 0, 0}, -1};
+int8_t gvencedor_primeira_rodada = -1;
 int8_t gvencedor_partida = -1;
 int8_t gvencedor_jogo = -1;
 int8_t gvencedor_queda = -1;
+
 JOGADORES_ATIVOS gjogadores_ativos;
+
 EstadoJogador gestado_jogadores[NUM_JOGADORES] = {{0, 0, {'-', BARALHO_VIRADO, 0, 0}}, {0, 0, {'-', BARALHO_VIRADO, 0, 0}}, {0, 0, {'-', BARALHO_VIRADO, 0, 0}}, {0, 0, {'-', BARALHO_VIRADO, 0, 0}}};
 Carta gjogadores_cartas[NUM_JOGADORES][NUM_CARTAS_MAO];
 int8_t gindice_carta;
@@ -88,22 +91,15 @@ uint8_t gjogadores_cartas_jogadas[NUM_JOGADORES][NUM_CARTAS_MAO];
 /* FUNÇÕES */
 void iniciar_rodada() {
 	gturno = 0;
-	gestado.empate_parcial = 0;
 	carta_virar(&gestado.carta_mais_forte);
 	gestado.jogador_carta_mais_forte = -1;
 	gfase = FJ_TURNO;
 }
 
 int8_t terminar_rodada(int8_t vencedor_partida) {
-	gturno = 0;
-	//gestado.empate_parcial = 0;
-	carta_virar(&gestado.carta_mais_forte);
-	//gestado.jogador_atual = (gestado.jogador_atual + 1) % NUM_JOGADORES;
-
 	//Incrementa a quantidade de rodadas.
-	gestado.rodadas[gestado.jogador_carta_mais_forte]++;
-
-	//gestado.jogador_carta_mais_forte = -1;
+	gestado.rodadas[!!gestado.jogador_carta_mais_forte]++;
+	gmao = gestado.jogador_carta_mais_forte;
 
 	int8_t i;
 	for (i = 0; i < 2; i++) {
@@ -165,14 +161,22 @@ int8_t terminar_jogo() {
 }
 
 void pontuacao_str_atualizar() {
-	snprintf(pontuacao_str, 300,
-		"<b>Partida atual</b>: %s (%d pontos)\n"
-		"<b>Jogos-Pontos</b>:\n"
-			"\t<span font_weight='bold' color='%s'>Time 1: %d-%2d</span>\n"
-			"\t<span font_weight='bold' color='%s'>Time 2: %d-%2d</span>\n",
+	snprintf(pontuacao_str, 512,
+		"<b>Partida atual</b>:\n"
+			"%s"
+			"\t%s (%d pontos)\n"
+			"\tEmpate na rodada? %s\n\n"
+		
+		"<b>Jogos-Pontos-Rodadas</b>:\n"
+			"\t<span font_weight='bold' color='%s'>Time 1: %d-%2d-%d</span>\n"
+			"\t<span font_weight='bold' color='%s'>Time 2: %d-%2d-%d</span>\n",
+		
+		gestado.empate ? "\t<span font_weight='bold'>Houve empate. Me mostre sua maior carta.</span>\n" : "",
 		valor_partida_str[gestado.valor_partida], valor_partida[gestado.valor_partida],
-		cores_times[0], gestado.jogos[0], gestado.pontos[0],
-		cores_times[1], gestado.jogos[1], gestado.pontos[1]
+		gestado.empate_parcial ? "Sim": "Não",
+		
+		cores_times[0], gestado.jogos[0], gestado.pontos[0], gestado.rodadas[0],
+		cores_times[1], gestado.jogos[1], gestado.pontos[1], gestado.rodadas[1]
 	);
 }
 
@@ -201,6 +205,9 @@ void mesa_str_atualizar(int8_t jogador_id, const EstadoJogador *estado_jogadores
 		}
 	}
 	snprintf(mesa_str, 512,
+		"Jogador 0:%s\n"
+			"\tNa mesa: |%c%s|\n\n"
+		
 		"Jogador 1:%s\n"
 			"\tNa mesa: |%c%s|\n\n"
 		
@@ -208,9 +215,6 @@ void mesa_str_atualizar(int8_t jogador_id, const EstadoJogador *estado_jogadores
 			"\tNa mesa: |%c%s|\n\n"
 		
 		"Jogador 3:%s\n"
-			"\tNa mesa: |%c%s|\n\n"
-		
-		"Jogador 4:%s\n"
 			"\tNa mesa: |%c%s|\n\n"
 		
 		"------------------------------------------------\n"

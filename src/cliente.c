@@ -11,7 +11,8 @@ void *t_receive(void *arg) {
 	char texto[512];
 
 	//Jogo
-	EstadoJogador estado_jogadores[NUM_JOGADORES];
+	int8_t truco_id;
+	char truco_nome[128];
 
 	//GUI - Jogo
 	GtkWidget *jogo_nome_label = GTK_WIDGET(gtk_builder_get_object(builder, "jogo_nome_label"));
@@ -67,22 +68,6 @@ void *t_receive(void *arg) {
 				mensagem_simples(&gmensagem_jogo, mensagem.tipo);
 				pthread_mutex_unlock(&mutex_mensagem);
 				
-				//Atualizando o estado, caso necessário.
-				if (mensagem.atualizar_estado_jogo) {
-					mensagem_obter_estado_jogo(&mensagem, &gestado);
-					pontuacao_str_atualizar();
-					gtk_label_set_markup(GTK_LABEL(jogo_estado_label), pontuacao_str);
-				}
-				if (mensagem.atualizar_estado_jogadores) {
-					mensagem_obter_estado_jogadores(&mensagem, estado_jogadores);
-					mesa_str_atualizar(jogador_id, estado_jogadores);
-					gtk_label_set_text(GTK_LABEL(jogo_mesa_label), mesa_str);
-
-					#ifdef DEBUG
-					printf("[E: ATUALIZANDO A MESA]\n%s\n", mesa_str);
-					#endif //DEBUG
-				}
-				
 				if (mensagem.tipo == SMT_PROCESSANDO) {
 					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), mensagem_obter_texto(&mensagem, texto));
 				} else if (mensagem.tipo == SMT_BEM_VINDO) {
@@ -101,15 +86,41 @@ void *t_receive(void *arg) {
 					//Exibindo a mensagem de boas vindas.
 					sprintf(texto, mensagem_tipo_str[SMT_BEM_VINDO], jogador_nome);
 					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), texto);
+				} else if (mensagem.tipo == SMT_JOGADA_ACEITA) {
+					mensagem_obter_carta(&mensagem, &gindice_carta);
+					
+					gjogadores_cartas_jogadas[jogador_id][gindice_carta] = 1;
+				} else if (mensagem.tipo == SMT_TRUCO) {
+					mensagem_obter_truco_id(&mensagem, &truco_id);
+					sprintf(truco_nome, jogador_nome_fmt, cores_times[truco_id], truco_id);
+					sprintf(texto, mensagem_tipo_str[SMT_TRUCO], truco_nome);
+
+					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), texto);
 				} else {
 					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), mensagem_tipo_str[mensagem.tipo]);
 
 					if (mensagem.tipo == SMT_ENVIANDO_CARTAS) {
 						mensagem_obter_cartas(&mensagem, gjogadores_cartas[jogador_id]);
-						mesa_str_atualizar(jogador_id, estado_jogadores);
+						mesa_str_atualizar(jogador_id, gestado_jogadores);
 						gtk_label_set_text(GTK_LABEL(jogo_mesa_label), mesa_str);
 						printf("[C: ATUALIZANDO A MESA]\n%s\n", mesa_str);
 					}
+				}
+
+				//Atualizando o estado, caso necessário.
+				if (mensagem.atualizar_estado_jogo) {
+					mensagem_obter_estado_jogo(&mensagem, &gestado);
+					pontuacao_str_atualizar();
+					gtk_label_set_markup(GTK_LABEL(jogo_estado_label), pontuacao_str);
+				}
+				if (mensagem.atualizar_estado_jogadores) {
+					mensagem_obter_estado_jogadores(&mensagem, gestado_jogadores);
+					mesa_str_atualizar(jogador_id, gestado_jogadores);
+					gtk_label_set_text(GTK_LABEL(jogo_mesa_label), mesa_str);
+
+					#ifdef DEBUG
+					printf("[E: ATUALIZANDO A MESA]\n%s\n", mesa_str);
+					#endif //DEBUG
 				}
 			}
 		}
@@ -144,11 +155,14 @@ void t_send(GtkEntry *entry, gpointer user_data) {
 				printf("indice carta: %d\n", indice_carta);
 				#endif //DEBUG
 
-				//Verifica se o índice da carta é valido. De -3 a -1, significa que a carta foi jogada no monte.
-				if ((indice_carta < 0 && indice_carta >= -NUM_CARTAS_MAO && !gestado.mao_de_10) || indice_carta <= NUM_CARTAS_MAO) {
-					//As cartas são numeradas de 0 a 2. Se o índice for 3, então o jogador pediu truco.
+				/*
+				 * As cartas são numeradas de 1 a 3. Se o índice for 0, então o jogador pediu truco.
+				 * Se o índice for negativo (entre -3 e -1), significa que a carta foi jogada no monte.
+				 */
+				//Verifica se o índice da carta é valido.
+				if ((indice_carta >= 0 && indice_carta <= NUM_CARTAS_MAO) || (indice_carta < 0 && indice_carta >= -NUM_CARTAS_MAO && gestado.mao_de_10 == -1)) {
 					//O jogador só pode pedir truco caso atenda algumas condições.
-					if (indice_carta < NUM_CARTAS_MAO || (gestado.time_truco != JOGADOR_TIME(jogador_id) && valor_partida[gestado.valor_partida] < VLR_DOZE)) {
+					if (indice_carta != 0 || (gestado.time_truco != JOGADOR_TIME(jogador_id) && valor_partida[gestado.valor_partida] < VLR_DOZE)) {
 						mensagem_definir_carta(mensagem, indice_carta);
 						msg_valida = 1;
 					}

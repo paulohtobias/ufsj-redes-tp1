@@ -48,12 +48,13 @@ typedef struct EstadoJogo {
 
 	int8_t jogador_atual;
 	
-	int8_t time_truco;       //id do último time que pediu truco. -1 se ninguém pediu ainda.
-	int8_t mao_de_10;        //0 ou 1: time na mão de 10. | -1: ninguém na mão de 10.
-	uint8_t valor_partida;   //índice no vetor global que indica quanto vale a partida.
+	uint8_t empate_parcial;  // Se houve empate na rodada até o momento.
+	uint8_t empate;          // Se a primeira rodada terminou em empate.
+	int8_t time_truco;       // id do último time que pediu truco. -1 se ninguém pediu ainda.
+	int8_t mao_de_10;        // 0 ou 1: time na mão de 10. | -1: ninguém na mão de 10.
+	uint8_t valor_partida;   // índice no vetor global que indica quanto vale a partida.
 	Carta carta_mais_forte;
 	int8_t jogador_carta_mais_forte;
-	uint8_t empate_parcial;
 } EstadoJogo;
 
 typedef struct EstadoJogador {
@@ -74,7 +75,7 @@ extern char cores_times[NUM_JOGADORES][16];
 extern char jogador_nome_fmt[60];
 extern uint8_t valor_partida[5];
 extern char valor_partida_str[5][10];
-char pontuacao_str[300];
+char pontuacao_str[512];
 char mesa_str[512];
 
 extern Carta gbaralho[NUM_CARTAS];
@@ -82,8 +83,9 @@ extern EstadoJogo gestado;
 int8_t gturno;
 int8_t gmao;
 uint8_t gfase;
-extern int8_t gvencedor_jogo;
+extern int8_t gvencedor_primeira_rodada;
 extern int8_t gvencedor_partida;
+extern int8_t gvencedor_jogo;
 extern int8_t gvencedor_queda;
 
 extern JOGADORES_ATIVOS gjogadores_ativos;

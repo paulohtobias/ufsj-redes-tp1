@@ -71,7 +71,7 @@ void *t_leitura(void *args) {
 	// Loop principal
 	while (1) {
 		#ifdef DEBUG
-		printf("client %d: thread_leitura-read\n", jogador->id);
+		printf("cliente %d: thread_leitura-read\n", jogador->id);
 		#endif //DEBUG
 
 		//Espera comandos do jogador.
@@ -86,7 +86,7 @@ void *t_leitura(void *args) {
 		}
 
 		#ifdef DEBUG
-		mensagem_print(&mensagem, "");
+		mensagem_print(&mensagem, "chegou do cliente");
 		#endif //DEBUG
 
 		if (mensagem.tipo == SMT_SEU_TURNO) {
@@ -98,41 +98,51 @@ void *t_leitura(void *args) {
 				carta_no_monte = 0;
 				if (gindice_carta < 0) {
 					carta_no_monte = 1;
-					gindice_carta = -(1 + gindice_carta);
+					gindice_carta *= -1;
 				}
 
-				if (gindice_carta == NUM_JOGADORES) {
+				//Verifica se o jogador pediu truco|seis|nove|doze.
+				if (gindice_carta == 0) {
+					#ifdef DEBUG
+					printf("%d pediu truco!\n", jogador->id);
+					#endif //DEBUG
 					gestado.time_truco = JOGADOR_TIME(jogador->id);
 					gfase = FJ_PEDIU_TRUCO;
 					pthread_cond_signal(&cond_jogo);
-				}
-				//Verifica se a carta já foi jogada anteriormente.
-				else if (gjogadores_cartas_jogadas[jogador->id][gindice_carta] == 0) {
-					//Marca a carta como jogada.
-					gjogadores_cartas_jogadas[jogador->id][gindice_carta] = 1;
+				} else {
+					gindice_carta--;
+					//Verifica se a carta já foi jogada anteriormente.
+					if (gjogadores_cartas_jogadas[jogador->id][gindice_carta] == 0) {
+						//Marca a carta como jogada.
+						gjogadores_cartas_jogadas[jogador->id][gindice_carta] = 1;
 
-					//Vira a carta do jogador, se necessário.
-					if (carta_no_monte) {
-						carta_virar(&gjogadores_cartas[jogador->id][gindice_carta]);
+						//Vira a carta do jogador, se necessário.
+						if (carta_no_monte) {
+							carta_virar(&gjogadores_cartas[jogador->id][gindice_carta]);
+						}
+
+						//Atualiza o estado do jogador.
+						gestado_jogadores[jogador->id].carta_jogada = gjogadores_cartas[jogador->id][gindice_carta];
+						gestado_jogadores[jogador->id].qtd_cartas_mao--;
+
+						gfase = FJ_FIM_TURNO;
+						pthread_cond_signal(&cond_jogo);
 					}
-
-					//Atualiza o estado do jogador.
-					gestado_jogadores[jogador->id].carta_jogada = gjogadores_cartas[jogador->id][gindice_carta];
-					gestado_jogadores[jogador->id].qtd_cartas_mao--;
-
-					gfase = FJ_FIM_TURNO;
-					pthread_cond_signal(&cond_jogo);
 				}
 			}
 			pthread_mutex_unlock(&mutex_jogo);
 		} else if (mensagem.tipo == SMT_TRUCO) {
-			if (FJ_PEDIU_TRUCO && JOGADOR_ESTA_ATIVO(jogador->id)) {
+			pthread_mutex_lock(&mutex_jogo);
+			if (gfase == FJ_PEDIU_TRUCO && JOGADOR_ESTA_ATIVO(jogador->id)) {
 				uint8_t resposta;
 				mensagem_obter_resposta(&mensagem, &resposta);
 
 				uint8_t indice = (jogador->id > 1);
-				pthread_mutex_lock(&mutex_jogo);
 				gresposta[indice] = resposta;
+
+				#ifdef DEBUG
+				printf("Reposta %d do truco: %d\n", jogador->id, resposta);
+				#endif //DEBUG
 
 				//Verifica se ambos responderam e se as respostas são iguais.
 				if (gresposta[!indice] != RSP_INDEFINIDO && gresposta[0] == gresposta[1]) {
@@ -140,8 +150,8 @@ void *t_leitura(void *args) {
 					//gfase = FJ_TURNO;
 					pthread_cond_signal(&cond_jogo);
 				}
-				pthread_mutex_unlock(&mutex_jogo);
 			}
+			pthread_mutex_unlock(&mutex_jogo);
 		} else if (mensagem.tipo == SMT_CHAT) {
 			pthread_mutex_lock(&mutex_broadcast);
 			
@@ -159,13 +169,16 @@ void enviar_mensagem(const Mensagem *mensagem, uint8_t new_msg) {
 		//Só envia para quem está autorizado a receber.
 		if (((1 << i) & new_msg) && jogadores[i].id != -1) {
 			#ifdef DEBUG
-			printf("enviando msg %d (%s) para %d\n", mensagem->tipo, mensagem_tipo_str[mensagem->tipo], jogadores[i].id);
+			//printf("enviando msg %d (%s) para %d\n", mensagem->tipo, mensagem_tipo_str[mensagem->tipo], jogadores[i].id);
 			#endif //DEBUG
 			
-			retval = write(jogadores[i].socket_fd, mensagem, mensagem_obter_tamanho(mensagem));
+			retval = mensagem_enviar(mensagem, jogadores[i].socket_fd);
+			if (retval == -1) {
+				handle_error(1, "enviar_mensagem-write");
+			}
 			
 			#ifdef DEBUG
-			printf("escreveu %d bytes na msg %d praa %d\n", retval, mensagem->tipo, jogadores[i].id);
+			//printf("escreveu %d bytes na msg %d praa %d\n", retval, mensagem->tipo, jogadores[i].id);
 			#endif //DEBUG
 		}
 	}

@@ -26,6 +26,7 @@ typedef enum MENSAGEM_TIPO {
 	SMT_PROCESSANDO,
 	SMT_ENVIANDO_CARTAS,
 	SMT_SEU_TURNO,
+	SMT_JOGADA_ACEITA,
 	SMT_TRUCO,
 	SMT_EMPATE,
 	SMT_FIM_RODADA,
@@ -36,7 +37,7 @@ typedef enum MENSAGEM_TIPO {
 	__SMT_QTD
 } MENSAGEM_TIPO;
 
-extern char mensagem_tipo_str[__SMT_QTD][64];
+extern char mensagem_tipo_str[__SMT_QTD][BUFF_SIZE];
 
 enum {
 	MSG_NINGUEM = 0,
@@ -45,6 +46,8 @@ enum {
 	MSG_TODOS = 0xF
 };
 #define MSG_JOGADOR(id) (1 << id)
+#define MSG_TIME(id) (JOGADOR_TIME(id) ? MSG_TIME2 : MSG_TIME1)
+#define MSG_TIME_ADV(id) (JOGADOR_TIME(id) ? MSG_TIME1 : MSG_TIME2)
 
 typedef struct Mensagem {
 	/* METADADOS */
@@ -85,13 +88,17 @@ void mensagem_obter_estado_jogo(const Mensagem *mensagem, EstadoJogo *estado_jog
 
 void mensagem_obter_estado_jogadores(const Mensagem *mensagem, EstadoJogador estado_jogadores[NUM_JOGADORES]);
 
+void mensagem_definir_cartas(Mensagem *mensagem, const Carta cartas[NUM_CARTAS_MAO]);
+
+void mensagem_obter_cartas(const Mensagem *mensagem, Carta cartas[NUM_CARTAS_MAO]);
+
 void mensagem_obter_carta(const Mensagem *mensagem, int8_t *indice_carta);
 
 void mensagem_definir_carta(Mensagem *mensagem, int8_t indice_carta);
 
-void mensagem_definir_cartas(Mensagem *mensagem, const Carta cartas[NUM_CARTAS_MAO]);
+void mensagem_obter_truco_id(const Mensagem *mensagem, int8_t *id);
 
-void mensagem_obter_cartas(const Mensagem *mensagem, Carta cartas[NUM_CARTAS_MAO]);
+void mensagem_truco(Mensagem *mensagem, int8_t id);
 
 void mensagem_obter_resposta(const Mensagem *mensagem, uint8_t *resposta);
 
@@ -102,9 +109,11 @@ char *mensagem_obter_texto(const Mensagem *mensagem, char *texto);
 void mensagem_definir_textof(Mensagem *mensagem, const char *format, ...);
 
 
+void mensagem_processando(Mensagem *mensagem, const char *texto);
+
 void mensagem_seu_turno(Mensagem *mensagem);
 
-void mensagem_truco(Mensagem *mensagem);
+void mensagem_jogada_aceita(Mensagem *mensagem, const EstadoJogo *estado_jogo, int8_t indice_carta);
 
 void mensagem_empate(Mensagem *mensagem);
 

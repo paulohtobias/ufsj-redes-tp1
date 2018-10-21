@@ -1,12 +1,13 @@
 #include "protocolo.h"
 
-char mensagem_tipo_str[__SMT_QTD][64] = {
+char mensagem_tipo_str[__SMT_QTD][BUFF_SIZE] = {
 	"Houve um erro no sistema.",
 	"Bem vindo, %s! Aguardando todos os jogadores...",
 	"Processando.",
 	"Estou te enviando suas cartas.",
 	"Seu turno.",
-	"Alguém pediu truco|seis|nove|doze.",
+	"Jogada aceita.",
+	"%s pediu truco|seis|nove|doze. (0:não; 1: sim; 2: aumento)",
 	"Houve empate. Me mostre sua maior carta.",
 	"Fim da rodada.",
 	"Fim da partida.",
@@ -81,6 +82,14 @@ void mensagem_obter_estado_jogadores(const Mensagem *mensagem, EstadoJogador est
 	memcpy(estado_jogadores, mensagem->estado_jogadores, sizeof(EstadoJogador) * NUM_JOGADORES);
 }
 
+void mensagem_definir_cartas(Mensagem *mensagem, const Carta cartas[NUM_CARTAS_MAO]) {
+	mensagem_somente_dados(mensagem, SMT_ENVIANDO_CARTAS, NUM_CARTAS_MAO * sizeof(Carta), cartas);
+}
+
+void mensagem_obter_cartas(const Mensagem *mensagem, Carta cartas[NUM_CARTAS_MAO]) {
+	memcpy(cartas, mensagem->dados, NUM_CARTAS_MAO * sizeof(Carta));
+}
+
 void mensagem_obter_carta(const Mensagem *mensagem, int8_t *indice_carta) {
 	memcpy(indice_carta, mensagem->dados, sizeof *indice_carta);
 }
@@ -89,12 +98,12 @@ void mensagem_definir_carta(Mensagem *mensagem, int8_t indice_carta) {
 	mensagem_somente_dados(mensagem, mensagem->tipo, sizeof indice_carta, &indice_carta);
 }
 
-void mensagem_definir_cartas(Mensagem *mensagem, const Carta cartas[NUM_CARTAS_MAO]) {
-	mensagem_somente_dados(mensagem, SMT_ENVIANDO_CARTAS, NUM_CARTAS_MAO * sizeof(Carta), cartas);
+void mensagem_obter_truco_id(const Mensagem *mensagem, int8_t *id) {
+	memcpy(id, mensagem->dados, sizeof *id);
 }
 
-void mensagem_obter_cartas(const Mensagem *mensagem, Carta cartas[NUM_CARTAS_MAO]) {
-	memcpy(cartas, mensagem->dados, NUM_CARTAS_MAO * sizeof(Carta));
+void mensagem_truco(Mensagem *mensagem, int8_t id) {
+	mensagem_somente_dados(mensagem, SMT_TRUCO, sizeof id, &id);
 }
 
 void mensagem_obter_resposta(const Mensagem *mensagem, uint8_t *resposta) {
@@ -123,12 +132,16 @@ void mensagem_definir_textof(Mensagem *mensagem, const char *format, ...) {
 }
 
 
+void mensagem_processando(Mensagem *mensagem, const char *texto) {
+	mensagem_somente_dados(mensagem, SMT_PROCESSANDO, strlen(texto) + 1, texto);
+}
+
 void mensagem_seu_turno(Mensagem *mensagem) {
 	mensagem_simples(mensagem, SMT_SEU_TURNO);
 }
 
-void mensagem_truco(Mensagem *mensagem) {
-	mensagem_simples(mensagem, SMT_TRUCO);
+void mensagem_jogada_aceita(Mensagem *mensagem, const EstadoJogo *estado_jogo, int8_t indice_carta) {
+	mensagem_definir(mensagem, SMT_JOGADA_ACEITA, 1, 0, sizeof indice_carta, estado_jogo, NULL, &indice_carta);
 }
 
 void mensagem_empate(Mensagem *mensagem) {
@@ -157,5 +170,6 @@ void mensagem_chat(Mensagem *mensagem, const char *texto, uint8_t tamanho_texto)
 
 
 void mensagem_print(const Mensagem *mensagem, const char *titulo) {
-	printf("%s Mensagem [%2d (%s)]: '%s'\n", titulo, mensagem->tipo, mensagem_tipo_str[mensagem->tipo], mensagem_obter_texto(mensagem, NULL));
+	//printf("%s Mensagem [%2d (%s)]: '%s'\n", titulo, mensagem->tipo, mensagem_tipo_str[mensagem->tipo], mensagem_obter_texto(mensagem, NULL));
+	printf("%s Mensagem [%2d]\n", titulo, mensagem->tipo);
 }
