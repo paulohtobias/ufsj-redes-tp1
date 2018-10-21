@@ -143,6 +143,7 @@ int main(int argc, char *argv[]) {
 						}
 						//Jogada foi feita.
 
+						//Se o jogador pediu truco|seis|nove|doze na sua vez.
 						if (gfase == FJ_PEDIU_TRUCO) {
 							if (gestado.mao_de_10 != -1) {
 								#ifdef DEBUG
@@ -212,7 +213,7 @@ int main(int argc, char *argv[]) {
 								printf("TO-DO: o time %d aumentou!! truco|seis|nove|doze\n", !gestado.jogador_atual);
 								#endif //DEBUG
 							}
-						} else {
+						} else { //Se cair aqui foi uma jogada normal.
 							//Atualiza a carta mais forte
 							Carta *carta_jogada = &gjogadores_cartas[gestado.jogador_atual][gindice_carta];
 							if (carta_jogada->poder > gestado.carta_mais_forte.poder) {
@@ -231,11 +232,11 @@ int main(int argc, char *argv[]) {
 							}
 
 							//Informa ao jogador que sua jogada foi aceita.
-							/*pthread_mutex_lock(&mutex_broadcast);
+							pthread_mutex_lock(&mutex_broadcast);
 							mensagem_jogada_aceita(&gmensagem, &gestado, gindice_carta);
 							new_msg = MSG_JOGADOR(gestado.jogador_atual);
 							enviar_mensagem(&gmensagem, new_msg);
-							pthread_mutex_unlock(&mutex_broadcast);*/
+							pthread_mutex_unlock(&mutex_broadcast);
 
 							//Atualiza o estado de todos os jogadores.
 							pthread_mutex_lock(&mutex_broadcast);

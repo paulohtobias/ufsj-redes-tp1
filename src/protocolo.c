@@ -47,7 +47,7 @@ void mensagem_definir(Mensagem *mensagem, MENSAGEM_TIPO tipo, uint8_t atualizar_
 	if (atualizar_estado_jogo) {
 		memcpy(&mensagem->estado_jogo, estado_jogo, sizeof(EstadoJogo));
 	}
-	if (atualizar_estado_jogo) {
+	if (atualizar_estado_jogadores) {
 		memcpy(mensagem->estado_jogadores, estado_jogadores, sizeof(EstadoJogador) * NUM_JOGADORES);
 	}
 	memcpy(mensagem->dados, dados, mensagem->tamanho_dados);

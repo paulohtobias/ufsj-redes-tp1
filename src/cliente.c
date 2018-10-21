@@ -90,6 +90,7 @@ void *t_receive(void *arg) {
 					mensagem_obter_carta(&mensagem, &gindice_carta);
 					
 					gjogadores_cartas_jogadas[jogador_id][gindice_carta] = 1;
+					carta_esvaziar(&gjogadores_cartas[jogador_id][gindice_carta]);
 				} else if (mensagem.tipo == SMT_TRUCO) {
 					mensagem_obter_truco_id(&mensagem, &truco_id);
 					sprintf(truco_nome, jogador_nome_fmt, cores_times[truco_id], truco_id);
@@ -101,6 +102,7 @@ void *t_receive(void *arg) {
 
 					if (mensagem.tipo == SMT_ENVIANDO_CARTAS) {
 						mensagem_obter_cartas(&mensagem, gjogadores_cartas[jogador_id]);
+						memset(gjogadores_cartas_jogadas[jogador_id], 0, NUM_CARTAS_MAO * sizeof gjogadores_cartas_jogadas[jogador_id][0]);
 						mesa_str_atualizar(jogador_id, gestado_jogadores);
 						gtk_label_set_text(GTK_LABEL(jogo_mesa_label), mesa_str);
 						printf("[C: ATUALIZANDO A MESA]\n%s\n", mesa_str);

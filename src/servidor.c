@@ -118,7 +118,7 @@ void *t_leitura(void *args) {
 
 						//Vira a carta do jogador, se necessário.
 						if (carta_no_monte) {
-							carta_virar(&gjogadores_cartas[jogador->id][gindice_carta]);
+							carta_esvaziar(&gjogadores_cartas[jogador->id][gindice_carta]);
 						}
 
 						//Atualiza o estado do jogador.

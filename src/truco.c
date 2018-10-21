@@ -189,14 +189,9 @@ void mesa_str_atualizar(int8_t jogador_id, const EstadoJogador *estado_jogadores
 			sprintf(
 				cartas_mao_str[i],
 				" |%c%s| |%c%s| |%c%s|",
-				gjogadores_cartas_jogadas[i][0] ? '-' : gjogadores_cartas[i][0].numero,
-				gjogadores_cartas_jogadas[i][0] ? naipe_str[BARALHO_VIRADO] : naipe_str[gjogadores_cartas[i][0].naipe],
-
-				gjogadores_cartas_jogadas[i][1] ? '-' : gjogadores_cartas[i][1].numero,
-				gjogadores_cartas_jogadas[i][1] ? naipe_str[BARALHO_VIRADO] : naipe_str[gjogadores_cartas[i][1].naipe],
-
-				gjogadores_cartas_jogadas[i][2] ? '-' : gjogadores_cartas[i][2].numero,
-				gjogadores_cartas_jogadas[i][2] ? naipe_str[BARALHO_VIRADO] : naipe_str[gjogadores_cartas[i][2].naipe]
+				gjogadores_cartas[i][0].numero, naipe_str[gjogadores_cartas[i][0].naipe],
+				gjogadores_cartas[i][1].numero, naipe_str[gjogadores_cartas[i][1].naipe],
+				gjogadores_cartas[i][2].numero, naipe_str[gjogadores_cartas[i][2].naipe]
 			);
 		} else {
 			for (j = 0; j < estado_jogadores[i].qtd_cartas_mao; j++) {
