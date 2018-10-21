@@ -22,16 +22,21 @@ typedef struct Jogador {
 
 
 /* VARIÁVEIS GLOBAIS*/
+Mensagem gmensagem;
+Jogador jogadores[NUM_JOGADORES];
+
 pthread_t thread_escrita;
 extern pthread_mutex_t mutex_jogo;
-extern pthread_mutex_t mutex_jogo;
 extern pthread_cond_t cond_jogo;
+
+extern pthread_mutex_t mutex_init;
+extern pthread_cond_t cond_init;
+extern int num_jogadores;
+
 extern pthread_mutex_t mutex_broadcast;
 extern pthread_mutex_t mutex_new_msg;
 extern pthread_cond_t cond_new_msg;
 extern uint8_t new_msg;
-Mensagem gmensagem;
-Jogador jogadores[NUM_JOGADORES];
 
 
 /* FUNÇÕES */

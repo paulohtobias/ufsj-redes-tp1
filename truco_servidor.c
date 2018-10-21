@@ -21,19 +21,21 @@ int main(int argc, char *argv[]) {
 		jogador_init(jogadores + i, i, jsfd);
 	}
 
-	sleep(3);
+	//sleep(3);
 	printf("\n\n");
 
+	pthread_mutex_lock(&mutex_jogo);
 	gvencedor_jogo = -1;
 	gjogadores_ativos = JA_JOGADOR(gestado.jogador_atual);
-	gfase = FJ_ENVIANDO_CARTAS;
 	gmao = rand() % NUM_JOGADORES;
-
-	Mensagem mensagem_jogo;
+	pthread_mutex_unlock(&mutex_jogo);
 	
 	//Iniciando o jogo.
-	extern pthread_cond_t cond_init;
-	pthread_cond_broadcast(&cond_init);
+	pthread_mutex_lock(&mutex_init);
+	while (num_jogadores < NUM_JOGADORES) {
+		pthread_cond_wait(&cond_init, &mutex_init);
+	}
+	pthread_mutex_unlock(&mutex_init);
 	
 	//Loop infinito até que os jogadores fechem o jogo.
 	while (1) {
@@ -43,9 +45,14 @@ int main(int argc, char *argv[]) {
 
 			//While do jogo: cada iteração é uma partida.
 			while (1) {
+				//Embaralha as cartas.
 				embaralhar(gbaralho, NUM_CARTAS);
+				
+				//Muda a fase do jogo.
 				pthread_mutex_lock(&mutex_jogo);
 				gfase = FJ_ENVIANDO_CARTAS;
+				
+				//Distribui as cartas a todos os jogadores.
 				for (i = 0; i < NUM_JOGADORES; i++) {
 					for (j = 0; j < NUM_CARTAS_MAO; j++) {
 						gjogadores_cartas[i][j] = gbaralho[i * NUM_JOGADORES + j];
@@ -53,15 +60,25 @@ int main(int argc, char *argv[]) {
 					}
 					carta_virar(&gestado_jogadores[i].carta_jogada);
 					gestado_jogadores[i].qtd_cartas_mao = 3;
+					
 					//Avisa o jogador.
-					mensagem_enviando_cartas(&mensagem_jogo, gjogadores_cartas[i]);
-					enviar_mensagem(&mensagem_jogo, MSG_JOGADOR(i));
+					pthread_mutex_lock(&mutex_broadcast);
+					mensagem_definir_cartas(&gmensagem, gjogadores_cartas[i]);
+					new_msg = MSG_JOGADOR(jogadores[i].id);
+					#ifdef DEBUG
+					printf("Enviando cartas para o jogador %d\n", jogadores[i].id);
+					#endif //DEBUG
+					pthread_cond_signal(&cond_new_msg);
+					pthread_mutex_unlock(&mutex_broadcast);
 				}
-
-				mensagem_atualizar_estado(&mensagem_jogo, NUM_JOGADORES, gestado_jogadores, 1, &gestado);
-				enviar_mensagem(&mensagem_jogo, MSG_TODOS);
-
 				pthread_mutex_unlock(&mutex_jogo);
+
+				//Atualiza o estado de todos os jogadores.
+				pthread_mutex_lock(&mutex_broadcast);
+				mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
+				new_msg = MSG_TODOS;
+				pthread_cond_signal(&cond_new_msg);
+				pthread_mutex_unlock(&mutex_broadcast);
 
 				//While da partida: cada iteração é uma rodada (JOGO)
 				//iniciar_rodada();
@@ -70,22 +87,28 @@ int main(int argc, char *argv[]) {
 					pthread_mutex_lock(&mutex_jogo);
 					gturno = 0;
 					gestado.jogador_atual = gmao;
-					printf("[JOGO] Inicio do turno. Jogador atual: %d\n", gestado.jogador_atual);
+					
+					#ifdef DEBUG
+					printf("[JOGO] Inicio do turno.\n$$$ Jogador atual: %d\n", gestado.jogador_atual);
+					#endif //DEBUG
+					
 					pthread_mutex_unlock(&mutex_jogo);
 					//While da rodada: cada iteração é um turno.
 					while (1) {
-						//Marca a fase do jogo como TURNO.
 						pthread_mutex_lock(&mutex_jogo);
 
+						//Marca a fase do jogo como TURNO.
 						gfase = FJ_TURNO;
-						gjogadores_ativos = JA_JOGADOR(gestado.jogador_atual);
 
-						//pthread_mutex_lock(&mutex_broadcast);
+						//Seta o jogador atual como o único jogador ativo.
+						gjogadores_ativos = JA_JOGADOR(gestado.jogador_atual);
 						
-						mensagem_seu_turno(&mensagem_jogo);
-						enviar_mensagem(&mensagem_jogo, MSG_JOGADOR(gestado.jogador_atual));
-						
-						//pthread_mutex_unlock(&mutex_broadcast);
+						//Avisa para o jogador que é sua vez de jogar.
+						pthread_mutex_lock(&mutex_broadcast);
+						mensagem_seu_turno(&gmensagem);
+						new_msg = MSG_JOGADOR(gestado.jogador_atual);
+						pthread_cond_signal(&cond_new_msg);
+						pthread_mutex_unlock(&mutex_broadcast);
 						pthread_mutex_unlock(&mutex_jogo);
 
 
@@ -106,11 +129,11 @@ int main(int argc, char *argv[]) {
 								pthread_mutex_unlock(&mutex_jogo);
 								break;
 							}
-							mensagem_truco(&mensagem_jogo);
+							mensagem_truco(&gmensagem);
 							gresposta[0] = gresposta[1] = RSP_INDEFINIDO;
 							uint8_t time_adversario = (JOGADOR_TIME(gestado.jogador_atual) == 0) ? MSG_TIME1 : MSG_TIME2;
 							gjogadores_ativos = time_adversario;
-							enviar_mensagem(&mensagem_jogo, time_adversario);
+							enviar_mensagem(&gmensagem, time_adversario);
 							pthread_mutex_unlock(&mutex_jogo);
 
 							pthread_mutex_lock(&mutex_jogo);
@@ -151,8 +174,11 @@ int main(int argc, char *argv[]) {
 							}
 
 							//Atualiza o estado de todos os jogadores.
-							mensagem_atualizar_estado(&mensagem_jogo, 1, &gestado_jogadores[gestado.jogador_atual], 0, NULL);
-							enviar_mensagem(&mensagem_jogo, MSG_TODOS);
+							pthread_mutex_lock(&mutex_broadcast);
+							mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
+							new_msg = MSG_TODOS;
+							pthread_cond_signal(&cond_new_msg);
+							pthread_mutex_unlock(&mutex_broadcast);
 
 							//todo: enviar mensagem de jogada aceita.
 
@@ -181,10 +207,12 @@ int main(int argc, char *argv[]) {
 					}
 				}
 
-				//Envia mensagem para os jogadores (BROADCAST)
-				mensagem_fim_rodada(&gmensagem);
+				//Atualiza o estado de todos os jogadores.
+				pthread_mutex_lock(&mutex_broadcast);
+				mensagem_fim_partida(&gmensagem, gvencedor_partida);
 				new_msg = MSG_TODOS;
 				pthread_cond_signal(&cond_new_msg);
+				pthread_mutex_unlock(&mutex_broadcast);
 			}
 		}
 	}

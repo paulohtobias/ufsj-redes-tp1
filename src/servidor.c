@@ -2,6 +2,7 @@
 
 pthread_mutex_t mutex_jogo = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond_jogo = PTHREAD_COND_INITIALIZER;
+
 pthread_mutex_t mutex_init = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond_init = PTHREAD_COND_INITIALIZER;
 int num_jogadores = 0;
@@ -27,10 +28,6 @@ int s_accept(int ssfd) {
 	if (client_socket_fd == -1) {
 		handle_error(client_socket_fd, "accept");
 	}
-
-	num_jogadores++;
-
-	printf("[Server]: client %d connected.\n", client_socket_fd);
 
 	return client_socket_fd;
 }
@@ -61,17 +58,23 @@ void *t_leitura(void *args) {
 	//Setando o nome do jogador
 	sprintf(
 		jogador_nome,
-		"<span font_weight='bold' color='%s'>Jogador %d</span>",
+		jogador_nome_fmt,
 		cores_times[jogador->id], jogador->id
 	);
 
 	//Mensagem de boas vindas
 	pthread_mutex_lock(&mutex_broadcast);
-	mensagem_bem_vindo(&gmensagem);
-	mensagem_definir_textof(&gmensagem, "Bem vindo, %s! Aguardando todos os jogadores...", jogador_nome);
+	mensagem_bem_vindo(&gmensagem, jogador->id);
 	new_msg = MSG_JOGADOR(jogador->id);
 	pthread_cond_signal(&cond_new_msg);
 	pthread_mutex_unlock(&mutex_broadcast);
+
+	pthread_mutex_lock(&mutex_init);
+	num_jogadores++;
+	if (num_jogadores == NUM_JOGADORES) {
+		pthread_cond_signal(&cond_init);
+	}
+	pthread_mutex_unlock(&mutex_init);
 
 	// Loop principal
 	while (1) {
@@ -166,14 +169,14 @@ void *t_leitura(void *args) {
 void *t_escrita(void *args) {
 	while (1) {
 		//Espera uma nova mensagem chegar.
-		pthread_mutex_lock(&mutex_new_msg);
+		//pthread_mutex_lock(&mutex_new_msg);
+		pthread_mutex_lock(&mutex_broadcast);
 		while (new_msg == MSG_NINGUEM) {
-			pthread_cond_wait(&cond_new_msg, &mutex_new_msg);
+			pthread_cond_wait(&cond_new_msg, &mutex_broadcast);
 		}
-		pthread_mutex_unlock(&mutex_new_msg);
+		//pthread_mutex_unlock(&mutex_new_msg);
 
 		//Envia a mensagem aos clientes.
-		pthread_mutex_lock(&mutex_broadcast);
 		enviar_mensagem(&gmensagem, new_msg);
 		new_msg = MSG_NINGUEM;
 		pthread_mutex_unlock(&mutex_broadcast);
@@ -186,13 +189,13 @@ void enviar_mensagem(const Mensagem *mensagem, uint8_t new_msg) {
 		//Só envia para quem está autorizado a receber.
 		if (((1 << i) & new_msg) && jogadores[i].id != -1) {
 			#ifdef DEBUG
-			printf("[Servidor] enviando msg %d (%s) para %d\n", mensagem->tipo, mensagem_tipo_str[mensagem->tipo], jogadores[i].id);
+			printf("enviando msg %d (%s) para %d\n", mensagem->tipo, mensagem_tipo_str[mensagem->tipo], jogadores[i].id);
 			#endif //DEBUG
 			
 			retval = write(jogadores[i].socket_fd, mensagem, mensagem_obter_tamanho(mensagem));
 			
 			#ifdef DEBUG
-			printf("[Servidor] escreveu %d bytes na msg %d praa %d\n", retval, mensagem->tipo, jogadores[i].id);
+			printf("escreveu %d bytes na msg %d praa %d\n", retval, mensagem->tipo, jogadores[i].id);
 			#endif //DEBUG
 		}
 	}

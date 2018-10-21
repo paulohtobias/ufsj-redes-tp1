@@ -71,6 +71,7 @@ typedef enum RESPOSTAS {
 
 /* VARIÁVEIS GLOBAIS */
 extern char cores_times[NUM_JOGADORES][16];
+extern char jogador_nome_fmt[60];
 extern uint8_t valor_partida[5];
 extern char valor_partida_str[5][10];
 char pontuacao_str[300];

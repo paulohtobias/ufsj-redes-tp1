@@ -8,6 +8,7 @@ int criar_socket_cliente() {
 void *t_receive(void *arg) {
 	int retval;
 	Mensagem mensagem;
+	char texto[512];
 
 	//Jogo
 	EstadoJogador estado_jogadores[NUM_JOGADORES];
@@ -35,7 +36,7 @@ void *t_receive(void *arg) {
 
 		#ifdef DEBUG
 		printf("\033[0;31m"); 
-		mensagem_print(&mensagem, "[%d] CHEGOU DO SERVIDOR: ");
+		mensagem_print(&mensagem, "CHEGOU DO SERVIDOR: ");
 		printf("\033[0m");
 		#endif
 
@@ -72,28 +73,33 @@ void *t_receive(void *arg) {
 					pontuacao_str_atualizar();
 					gtk_label_set_markup(GTK_LABEL(jogo_estado_label), pontuacao_str);
 				}
-				if (mensagem.estados > 0) {
+				if (mensagem.atualizar_estado_jogadores) {
 					mensagem_obter_estado_jogadores(&mensagem, estado_jogadores);
 					mesa_str_atualizar(jogador_id, estado_jogadores);
 					gtk_label_set_text(GTK_LABEL(jogo_mesa_label), mesa_str);
+
+					#ifdef DEBUG
 					printf("[E: ATUALIZANDO A MESA]\n%s\n", mesa_str);
-					//todo: atualizar o estado do jogo
+					#endif //DEBUG
 				}
 				
-				if (mensagem.tipo == SMT_BEM_VINDO || mensagem.tipo == SMT_PROCESSANDO) {
-					char *texto = mensagem_obter_texto(&mensagem);
+				if (mensagem.tipo == SMT_PROCESSANDO) {
+					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), mensagem_obter_texto(&mensagem, texto));
+				} else if (mensagem.tipo == SMT_BEM_VINDO) {
+					//Pegando o id e setando o nome.
+					mensagem_obter_id(&mensagem, &jogador_id);
+					sprintf(jogador_nome, jogador_nome_fmt, cores_times[jogador_id], jogador_id);
 
-					if (mensagem.tipo == SMT_BEM_VINDO) {
-						char cor[16];
-						
-						sscanf(texto, "Bem vindo, %[^!]! Aguardando todos os jogadores...", jogador_nome);
-						sscanf(jogador_nome, "<span font_weight='bold' color='%[^']'>Jogador %" SCNi8 "</span>", cor, &jogador_id);
-
-						printf("id: %d\nNome: %s\ncor: %s\n", jogador_id, jogador_nome, cor);
-
-						gtk_label_set_markup(GTK_LABEL(jogo_nome_label), jogador_nome);
-					}
+					#ifdef DEBUG
+					printf("---= id: %d # Nome: %s =---\n", jogador_id, jogador_nome);
+					#endif //DEBUG
 					
+					//Setando a barra de nome.
+					sprintf(texto, "Você: %s", jogador_nome);
+					gtk_label_set_markup(GTK_LABEL(jogo_nome_label), texto);
+
+					//Exibindo a mensagem de boas vindas.
+					sprintf(texto, mensagem_tipo_str[SMT_BEM_VINDO], jogador_nome);
 					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), texto);
 				} else {
 					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), mensagem_tipo_str[mensagem.tipo]);
@@ -161,7 +167,7 @@ void t_send(GtkEntry *entry, gpointer user_data) {
 
 		#ifdef DEBUG
 		mensagem_print(mensagem, "Mensagem do chat");
-		printf("Tamanho da mensagem do chat: %d\n", mensagem_obter_tamanho(mensagem));
+		printf("Tamanho da mensagem do chat: %lu\n", mensagem_obter_tamanho(mensagem));
 		#endif //DEBUG
 	}
 

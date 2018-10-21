@@ -6,6 +6,7 @@ char cores_times[NUM_JOGADORES][16] = {
 	"#0000FF", /* Blue       */   "#FF0000", /* Red    */ 
 	"#1E90FF", /* DodgerBlue */   "#FF6347"  /* Tomato */
 };
+char jogador_nome_fmt[60] = "<span font_weight='bold' color='%s'>Jogador %d</span>";
 uint8_t valor_partida[5] = {
 	VLR_NORMAL,
 	VLR_TRUCO,
