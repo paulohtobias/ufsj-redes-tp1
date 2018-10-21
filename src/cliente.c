@@ -103,7 +103,7 @@ void *t_receive(void *arg) {
 					if (mensagem.tipo == SMT_ENVIANDO_CARTAS) {
 						mensagem_obter_cartas(&mensagem, gjogadores_cartas[jogador_id]);
 						memset(gjogadores_cartas_jogadas[jogador_id], 0, NUM_CARTAS_MAO * sizeof gjogadores_cartas_jogadas[jogador_id][0]);
-						mesa_str_atualizar(jogador_id, gestado_jogadores);
+						mesa_str_atualizar(jogador_id);
 						gtk_label_set_text(GTK_LABEL(jogo_mesa_label), mesa_str);
 						printf("[C: ATUALIZANDO A MESA]\n%s\n", mesa_str);
 					}
@@ -117,7 +117,7 @@ void *t_receive(void *arg) {
 				}
 				if (mensagem.atualizar_estado_jogadores) {
 					mensagem_obter_estado_jogadores(&mensagem, gestado_jogadores);
-					mesa_str_atualizar(jogador_id, gestado_jogadores);
+					mesa_str_atualizar(jogador_id);
 					gtk_label_set_text(GTK_LABEL(jogo_mesa_label), mesa_str);
 
 					#ifdef DEBUG

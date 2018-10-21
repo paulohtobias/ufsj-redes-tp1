@@ -113,6 +113,6 @@ int8_t terminar_jogo();
 
 void pontuacao_str_atualizar();
 
-void mesa_str_atualizar(int8_t jogador_id, const EstadoJogador *estado_jogadores);
+void mesa_str_atualizar(int8_t jogador_id);
 
 #endif //TRUCO_H

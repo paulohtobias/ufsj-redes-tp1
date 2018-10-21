@@ -231,6 +231,8 @@ int main(int argc, char *argv[]) {
 								}
 							}
 
+							carta_esvaziar(carta_jogada);
+
 							//Informa ao jogador que sua jogada foi aceita.
 							pthread_mutex_lock(&mutex_broadcast);
 							mensagem_jogada_aceita(&gmensagem, &gestado, gindice_carta);
@@ -301,7 +303,7 @@ int main(int argc, char *argv[]) {
 							#endif //DEBUG
 						}
 
-						//Verificando se houve vencedor na rodada. (JOGO)
+						//Verificando se houve vencedor na rodada.
 						gvencedor_partida = terminar_rodada(gvencedor_partida);
 
 						#ifdef DEBUG
@@ -318,10 +320,28 @@ int main(int argc, char *argv[]) {
 
 				//Atualiza o estado de todos os jogadores.
 				pthread_mutex_lock(&mutex_broadcast);
-				mensagem_fim_partida(&gmensagem, gvencedor_partida);
+				mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
 				new_msg = MSG_TODOS;
 				enviar_mensagem(&gmensagem, new_msg);
 				pthread_mutex_unlock(&mutex_broadcast);
+
+
+				pthread_mutex_lock(&mutex_jogo);
+				//Verificando se houve vencedor na partida.
+				//TODO: olhar essa função.
+				getchar();
+				gvencedor_jogo = terminar_partida(gvencedor_partida);
+
+				#ifdef DEBUG
+				printf("Vencedor do jogo: %d\n", gvencedor_jogo);
+				#endif //DEBUG
+
+				if (gvencedor_jogo >= 0) {
+					pthread_mutex_unlock(&mutex_jogo);
+					exit(0);
+					break;
+				}
+				pthread_mutex_unlock(&mutex_jogo);
 			}
 		}
 	}

@@ -98,7 +98,7 @@ void iniciar_rodada() {
 
 int8_t terminar_rodada(int8_t vencedor_partida) {
 	//Incrementa a quantidade de rodadas.
-	gestado.rodadas[!!gestado.jogador_carta_mais_forte]++;
+	gestado.rodadas[JOGADOR_TIME(gestado.jogador_carta_mais_forte)]++;
 	gmao = gestado.jogador_carta_mais_forte;
 
 	int8_t i;
@@ -180,7 +180,7 @@ void pontuacao_str_atualizar() {
 	);
 }
 
-void mesa_str_atualizar(int8_t jogador_id, const EstadoJogador *estado_jogadores) {
+void mesa_str_atualizar(int8_t jogador_id) {
 	int i, j;
 	char cartas_mao_str[NUM_JOGADORES][40];
 	for (i = 0; i < NUM_JOGADORES; i++) {
@@ -194,7 +194,7 @@ void mesa_str_atualizar(int8_t jogador_id, const EstadoJogador *estado_jogadores
 				gjogadores_cartas[i][2].numero, naipe_str[gjogadores_cartas[i][2].naipe]
 			);
 		} else {
-			for (j = 0; j < estado_jogadores[i].qtd_cartas_mao; j++) {
+			for (j = 0; j < gestado_jogadores[i].qtd_cartas_mao; j++) {
 				strcat(cartas_mao_str[i], " |--|");
 			}
 		}
@@ -215,10 +215,10 @@ void mesa_str_atualizar(int8_t jogador_id, const EstadoJogador *estado_jogadores
 		"------------------------------------------------\n"
 		"Carta mais alta: %c%s (Jogador %d)",
 		
-		cartas_mao_str[0], estado_jogadores[0].carta_jogada.numero, naipe_str[estado_jogadores[0].carta_jogada.naipe],
-		cartas_mao_str[1], estado_jogadores[1].carta_jogada.numero, naipe_str[estado_jogadores[1].carta_jogada.naipe],
-		cartas_mao_str[2], estado_jogadores[2].carta_jogada.numero, naipe_str[estado_jogadores[2].carta_jogada.naipe],
-		cartas_mao_str[3], estado_jogadores[3].carta_jogada.numero, naipe_str[estado_jogadores[3].carta_jogada.naipe],
+		cartas_mao_str[0], gestado_jogadores[0].carta_jogada.numero, naipe_str[gestado_jogadores[0].carta_jogada.naipe],
+		cartas_mao_str[1], gestado_jogadores[1].carta_jogada.numero, naipe_str[gestado_jogadores[1].carta_jogada.naipe],
+		cartas_mao_str[2], gestado_jogadores[2].carta_jogada.numero, naipe_str[gestado_jogadores[2].carta_jogada.naipe],
+		cartas_mao_str[3], gestado_jogadores[3].carta_jogada.numero, naipe_str[gestado_jogadores[3].carta_jogada.naipe],
 		gestado.carta_mais_forte.numero, naipe_str[gestado.carta_mais_forte.naipe], gestado.jogador_carta_mais_forte
 	);
 }

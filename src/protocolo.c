@@ -34,8 +34,8 @@ size_t mensagem_obter_tamanho(const Mensagem *mensagem) {
 void mensagem_definir(Mensagem *mensagem, MENSAGEM_TIPO tipo, uint8_t atualizar_estado_jogo, uint8_t atualizar_estado_jogadores, uint8_t tamanho_dados, const EstadoJogo *estado_jogo, const EstadoJogador estado_jogadores[NUM_JOGADORES], const void *dados) {
 	//Metadados.
 	mensagem->tipo = tipo;
-	mensagem->atualizar_estado_jogo = atualizar_estado_jogo;
-	mensagem->atualizar_estado_jogadores = atualizar_estado_jogadores;
+	mensagem->atualizar_estado_jogo = estado_jogo != NULL;
+	mensagem->atualizar_estado_jogadores = estado_jogadores != NULL;
 	mensagem->tamanho_dados = tamanho_dados;
 
 	
