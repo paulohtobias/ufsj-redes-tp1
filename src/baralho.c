@@ -1,5 +1,14 @@
 #include "baralho.h"
 
+char naipe_str[6][10] = {
+	"-",
+	"♠",
+	"♣",
+	"♥",
+	"♦",
+	"*"
+};
+
 void carta_virar(Carta *carta) {
 	carta->numero = '-';
 	carta->naipe = BARALHO_VIRADO;

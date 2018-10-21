@@ -6,6 +6,13 @@ char cores_times[NUM_JOGADORES][16] = {
 	"#0000FF", /* Blue       */   "#FF0000", /* Red    */ 
 	"#1E90FF", /* DodgerBlue */   "#FF6347"  /* Tomato */
 };
+uint8_t valor_partida[5] = {
+	VLR_NORMAL,
+	VLR_TRUCO,
+	VLR_SEIS,
+	VLR_NOVE,
+	VLR_DOZE
+};
 char valor_partida_str[5][10] = {
 	"Normal",
 	"TRUCO",
@@ -13,6 +20,7 @@ char valor_partida_str[5][10] = {
 	"NOVE",
 	"DOZE"
 };
+
 Carta gbaralho[NUM_CARTAS] = {
 	{'4', PAUS, 15, 0},
 	{'7', COPAS, 14, 0},
@@ -66,44 +74,60 @@ Carta gbaralho[NUM_CARTAS] = {
 	{'4', COPAS, 1, 0},
 	{'4', OUROS, 1, 0}
 };
-EstadoJogo gpontuacao = {{0, 0}, {0, 0}, 0, VLR_NORMAL, {0, 0}};
+EstadoJogo gestado = {{0, 0}, {0, 0}, {0, 0}, -1, -1, 0, 0, {'-', BARALHO_VIRADO, 0, 0}, -1, 0};
 int8_t gvencedor_partida = -1;
 int8_t gvencedor_jogo = -1;
 int8_t gvencedor_queda = -1;
-int8_t gturno = -1;
-int8_t gmao = -1;
-FASE_JOGO gfase = FJ_AGUARDANDO_INICIO;
 JOGADORES_ATIVOS gjogadores_ativos;
+EstadoJogador gestado_jogadores[NUM_JOGADORES] = {{0, 0, {'-', BARALHO_VIRADO, 0, 0}}, {0, 0, {'-', BARALHO_VIRADO, 0, 0}}, {0, 0, {'-', BARALHO_VIRADO, 0, 0}}, {0, 0, {'-', BARALHO_VIRADO, 0, 0}}};
 Carta gjogadores_cartas[NUM_JOGADORES][NUM_CARTAS_MAO];
-int gjogadores_cartas_jogadas[NUM_JOGADORES][NUM_CARTAS_MAO];
-Carta gcarta_mais_forte = {'-', BARALHO_VIRADO, 0, 0};
-int8_t gjogador_carta_mais_forte = -1;
-int gempate_parcial = 0;
+int8_t gindice_carta;
+uint8_t gjogadores_cartas_jogadas[NUM_JOGADORES][NUM_CARTAS_MAO];
 
 /* FUNÇÕES */
-int terminar_rodada() {
+void iniciar_rodada() {
 	gturno = 0;
-	gempate_parcial = 0;
-	carta_virar(&gcarta_mais_forte);
-	gpontuacao.rodadas[gjogador_carta_mais_forte]++;
-	gjogador_carta_mais_forte = -1;
-	
-	int i;
+	gestado.empate_parcial = 0;
+	carta_virar(&gestado.carta_mais_forte);
+	gestado.jogador_carta_mais_forte = -1;
+	gfase = FJ_TURNO;
+}
+
+int8_t terminar_rodada(int8_t vencedor_partida) {
+	gturno = 0;
+	//gestado.empate_parcial = 0;
+	carta_virar(&gestado.carta_mais_forte);
+	//gestado.jogador_atual = (gestado.jogador_atual + 1) % NUM_JOGADORES;
+
+	//Incrementa a quantidade de rodadas.
+	gestado.rodadas[gestado.jogador_carta_mais_forte]++;
+
+	//gestado.jogador_carta_mais_forte = -1;
+
+	int8_t i;
 	for (i = 0; i < 2; i++) {
-		if (gpontuacao.rodadas[i] == 2) {
-			int valor = gpontuacao.valor_partida;
+		if (vencedor_partida != -1) {
+			i = vencedor_partida;
+		}
+		if (gestado.rodadas[i] == 2 || i == vencedor_partida) {
+			int valor = valor_partida[gestado.valor_partida];
 
 			// Se o adversário estiver na mão de 10
-			if (gpontuacao.mao_de_10 == !i) {
-				valor = 4;
+			if (gestado.mao_de_10 == !i) {
+				valor = VLR_MAO_10;
 			}
 			
-			gpontuacao.pontos[i] += valor;
+			gestado.pontos[i] += valor;
 
-			if (gpontuacao.valor_partida == 10 && gpontuacao.mao_de_10 == -1) {
-				gpontuacao.mao_de_10 = i;
+			//Entrando na mão de 10.
+			if (valor_partida[gestado.valor_partida] == VLR_MAO_10 && gestado.mao_de_10 == -1) {
+				gestado.mao_de_10 = i;
 			}
 
+			//O jogador que jogou a carta mais alta começa a próxima rodada.
+			gestado.jogador_atual = gestado.jogador_carta_mais_forte;
+			gestado.jogador_carta_mais_forte = -1;
+
 			return i;
 		}
 	}
@@ -111,16 +135,16 @@ int terminar_rodada() {
 	return -1;
 }
 
-int terminar_partida() {
-	gpontuacao.rodadas[0] = 0;
-	gpontuacao.rodadas[1] = 0;
-	gpontuacao.mao_de_10 = -1;
-	gpontuacao.valor_partida = VLR_NORMAL;
+int8_t terminar_partida() {
+	gestado.rodadas[0] = 0;
+	gestado.rodadas[1] = 0;
+	gestado.mao_de_10 = -1;
+	gestado.valor_partida = VLR_NORMAL;
 
-	int i;
+	int8_t i;
 	for (i = 0; i < 2; i++) {
-		if (gpontuacao.pontos[i] > 12) {
-			gpontuacao.jogos[i]++;
+		if (gestado.pontos[i] >= 12) {
+			gestado.jogos[i]++;
 			return i;
 		}
 	}
@@ -128,10 +152,10 @@ int terminar_partida() {
 	return -1;
 }
 
-int terminar_jogo() {
-	int i;
+int8_t terminar_jogo() {
+	int8_t i;
 	for (i = 0; i < 2; i++) {
-		if (gpontuacao.jogos[i] > 1) {
+		if (gestado.jogos[i] > 1) {
 			return i;
 		}
 	}
@@ -139,14 +163,62 @@ int terminar_jogo() {
 	return -1;
 }
 
-void pontuacao_str_atualizar(EstadoJogo *pontuacao) {
+void pontuacao_str_atualizar() {
 	snprintf(pontuacao_str, 300,
 		"<b>Partida atual</b>: %s (%d pontos)\n"
 		"<b>Jogos-Pontos</b>:\n"
 			"\t<span font_weight='bold' color='%s'>Time 1: %d-%02d</span>\n"
 			"\t<span font_weight='bold' color='%s'>Time 2: %d-%02d</span>\n",
-		valor_partida_str[pontuacao->valor_partida], pontuacao->valor_partida,
-		cores_times[0], pontuacao->jogos[0], pontuacao->pontos[0],
-		cores_times[1], pontuacao->jogos[1], pontuacao->pontos[1]
+		valor_partida_str[gestado.valor_partida], valor_partida[gestado.valor_partida],
+		cores_times[0], gestado.jogos[0], gestado.pontos[0],
+		cores_times[1], gestado.jogos[1], gestado.pontos[1]
+	);
+}
+
+void mesa_str_atualizar(int8_t jogador_id, const EstadoJogador *estado_jogadores) {
+	int i, j;
+	char cartas_mao_str[NUM_JOGADORES][40];
+	for (i = 0; i < NUM_JOGADORES; i++) {
+		memset(cartas_mao_str[i], 0, 40);
+		if (i == jogador_id) {
+			sprintf(
+				cartas_mao_str[i],
+				" |%c%s| |%c%s| |%c%s|",
+				gjogadores_cartas_jogadas[i][0] ? '-' : gjogadores_cartas[i][0].numero,
+				gjogadores_cartas_jogadas[i][0] ? naipe_str[BARALHO_VIRADO] : naipe_str[gjogadores_cartas[i][0].naipe],
+
+				gjogadores_cartas_jogadas[i][1] ? '-' : gjogadores_cartas[i][1].numero,
+				gjogadores_cartas_jogadas[i][1] ? naipe_str[BARALHO_VIRADO] : naipe_str[gjogadores_cartas[i][1].naipe],
+
+				gjogadores_cartas_jogadas[i][2] ? '-' : gjogadores_cartas[i][2].numero,
+				gjogadores_cartas_jogadas[i][2] ? naipe_str[BARALHO_VIRADO] : naipe_str[gjogadores_cartas[i][2].naipe]
+			);
+		} else {
+			for (j = 0; j < estado_jogadores[i].qtd_cartas_mao; j++) {
+				strcat(cartas_mao_str[i], " |--|");
+			}
+		}
+	}
+	snprintf(mesa_str, 512,
+		"Jogador 1:%s\n"
+			"\tNa mesa: |%c%s|\n\n"
+		
+		"Jogador 2:%s\n"
+			"\tNa mesa: |%c%s|\n\n"
+		
+		"Jogador 3:%s\n"
+			"\tNa mesa: |%c%s|\n\n"
+		
+		"Jogador 4:%s\n"
+			"\tNa mesa: |%c%s|\n\n"
+		
+		"------------------------------------------------\n"
+		"Carta mais alta: %c%s (Jogador %d)",
+		
+		cartas_mao_str[0], estado_jogadores[0].carta_jogada.numero, naipe_str[estado_jogadores[0].carta_jogada.naipe],
+		cartas_mao_str[1], estado_jogadores[1].carta_jogada.numero, naipe_str[estado_jogadores[1].carta_jogada.naipe],
+		cartas_mao_str[2], estado_jogadores[2].carta_jogada.numero, naipe_str[estado_jogadores[2].carta_jogada.naipe],
+		cartas_mao_str[3], estado_jogadores[3].carta_jogada.numero, naipe_str[estado_jogadores[3].carta_jogada.naipe],
+		gestado.carta_mais_forte.numero, naipe_str[gestado.carta_mais_forte.naipe], gestado.jogador_carta_mais_forte
 	);
 }

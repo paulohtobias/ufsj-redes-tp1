@@ -2,15 +2,28 @@
 #define CLIENTE_H
 
 #include "conexao.h"
+#include <ctype.h>
 #include <gtk/gtk.h>
 
-Carta cartas[NUM_CARTAS_MAO];
+/* ENUMS */
+enum {
+	ENTRY_JOGO,
+	ENTRY_CHAT
+};
 
+
+/* VARIÁVEIS GLOBAIS */
+int8_t jogador_id;
+char jogador_nome[128];
 int ssfd;
 pthread_t thread;
-
+pthread_mutex_t mutex_mensagem;
+Mensagem gmensagem_jogo;
+Mensagem gmensagem_chat;
 GtkBuilder *builder;
 
+
+/* FUNÇÕES */
 int criar_socket_cliente();
 
 ///Lê o log do chat do servidor e exibe na tela.

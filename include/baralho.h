@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 typedef enum NAIPE {
 	BARALHO_VIRADO,
@@ -17,10 +18,12 @@ typedef enum NAIPE {
 
 typedef struct Carta {
 	char numero;      // [A|2-7|J|Q|K|*|-]
-	NAIPE naipe;
+	uint8_t naipe;
 	uint8_t poder;    // [0-15]
 	uint8_t visivel;  // 0 ou 1
 } Carta;
+
+extern char naipe_str[6][10];
 
 void carta_virar(Carta *carta);
 

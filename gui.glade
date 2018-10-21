@@ -33,6 +33,18 @@
               </packing>
             </child>
             <child>
+              <object class="GtkLabel" id="jogo_nome_label">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Você</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
               <object class="GtkBox" id="game_estado_box">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
@@ -56,32 +68,46 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkTextView" id="game_textview_log">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="editable">False</property>
-                <property name="accepts_tab">False</property>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
                 <property name="position">2</property>
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="game_entry">
+              <object class="GtkLabel" id="jogo_mesa_label">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="ypad">10</property>
+                <property name="label" translatable="yes">Jogador 1: |--| |--|
+	Na mesa: |4♠|
+
+Jogador 2: |--| |--|
+	Na mesa: |3♣|
+
+Jogador 3: |4♠| |3♣| |K♠|
+	Na mesa: |--|
+
+Jogador 4: |4♠| |3♣| |K♠|
+	Na mesa: |--|
+
+------------------------------------------------
+Carta mais alta: 3♣ (Jogador 2)</property>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="jogo_entry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="overwrite_mode">True</property>
+                <property name="caps_lock_warning">False</property>
+                <property name="input_purpose">number</property>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">False</property>
-                <property name="position">3</property>
+                <property name="position">4</property>
               </packing>
             </child>
             <child>
@@ -93,7 +119,7 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="position">4</property>
+                <property name="position">5</property>
               </packing>
             </child>
           </object>

@@ -1,4 +1,5 @@
 #include "cliente.h"
+#include <errno.h>
 
 int criar_socket_cliente() {
 	return criar_socket(INADDR_ANY, PORTA, CONEXAO_MODO_CLIENTE);
@@ -9,12 +10,12 @@ void *t_receive(void *arg) {
 	Mensagem mensagem;
 
 	//Jogo
-	EstadoJogo estado_jogo;
 	EstadoJogador estado_jogadores[NUM_JOGADORES];
 
 	//GUI - Jogo
+	GtkWidget *jogo_nome_label = GTK_WIDGET(gtk_builder_get_object(builder, "jogo_nome_label"));
 	GtkWidget *jogo_estado_label = GTK_WIDGET(gtk_builder_get_object(builder, "jogo_estado_label"));
-	GtkWidget *jogo_textview_log = GTK_WIDGET(gtk_builder_get_object(builder, "jogo_textview_log"));
+	GtkWidget *jogo_mesa_label = GTK_WIDGET(gtk_builder_get_object(builder, "jogo_mesa_label"));
 	GtkWidget *jogo_mensagem_servidor_label = GTK_WIDGET(gtk_builder_get_object(builder, "jogo_mensagem_servidor_label"));
 
 	//GUI - Chat
@@ -25,57 +26,163 @@ void *t_receive(void *arg) {
 	GtkTextBuffer *textbuffer;
 
 	while (1) {
+		#ifdef DEBUG
+		printf("[jogador %d] read\n", jogador_id);
+		#endif //DEBUG
+
+		memset(&mensagem, 0, sizeof mensagem);
 		retval = read(ssfd, &mensagem, sizeof mensagem);
+
+		#ifdef DEBUG
+		printf("\033[0;31m"); 
+		mensagem_print(&mensagem, "[%d] CHEGOU DO SERVIDOR: ");
+		printf("\033[0m");
+		#endif
+
 		if (retval == -1) {
 			handle_error(1, "thread_leitura-read");
+		} else if (retval == 0) {
+			printf("O servidor encerrou a conexão.\n");
+			exit(0);
 		}
 
 		if (retval > 0) {
-			#ifdef DEBUG
-			mensagem_print(&mensagem, "CHEGOU DO SERVIDOR: ");
-			#endif
 
-			//Atualizando o estado, caso necessário.
-			if (mensagem.atualizar_pontuacao) {
-				mensagem_obter_pontuacao(&mensagem, &estado_jogo);
-				pontuacao_str_atualizar(&estado_jogo);
-				gtk_label_set_markup(GTK_LABEL(jogo_estado_label), pontuacao_str);
+			if (mensagem.tipo == SMT_ERRO) {
+				uint32_t nerr;
+				memcpy(&nerr, mensagem.dados, sizeof nerr);
+				handle_error(ntohl(nerr), mensagem_tipo_str[SMT_ERRO]);
 			}
-			if (mensagem.estados > 0) {
-				mensagem_obter_estado_jogadores(&mensagem, estado_jogadores);
-			}
-			
-			if (mensagem.tipo == SMT_BEM_VINDO) {
-				gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), mensagem_obter_texto(&mensagem));
-			}
-			else if (mensagem.tipo == SMT_PROCESSANDO) {
-				gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), mensagem_obter_texto(&mensagem));
-			}
-			else if (mensagem.tipo == SMT_CHAT) {
+
+			if (mensagem.tipo == SMT_CHAT) {
 				gsize bl;
 				gchar *u8buff = g_locale_to_utf8((char *) mensagem.dados, -1, NULL, &bl, NULL);
 				textbuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(chat_textview_log));
 				gtk_text_buffer_get_end_iter(textbuffer, &iter_end);
 				gtk_text_buffer_insert_markup(textbuffer, &iter_end, u8buff, bl);
+			} else {
+				//Atualiza o tipo da resposta.
+				pthread_mutex_lock(&mutex_mensagem);
+				mensagem_simples(&gmensagem_jogo, mensagem.tipo);
+				pthread_mutex_unlock(&mutex_mensagem);
+				
+				//Atualizando o estado, caso necessário.
+				if (mensagem.atualizar_estado_jogo) {
+					mensagem_obter_estado_jogo(&mensagem, &gestado);
+					pontuacao_str_atualizar();
+					gtk_label_set_markup(GTK_LABEL(jogo_estado_label), pontuacao_str);
+				}
+				if (mensagem.estados > 0) {
+					mensagem_obter_estado_jogadores(&mensagem, estado_jogadores);
+					mesa_str_atualizar(jogador_id, estado_jogadores);
+					gtk_label_set_text(GTK_LABEL(jogo_mesa_label), mesa_str);
+					printf("[E: ATUALIZANDO A MESA]\n%s\n", mesa_str);
+					//todo: atualizar o estado do jogo
+				}
+				
+				if (mensagem.tipo == SMT_BEM_VINDO || mensagem.tipo == SMT_PROCESSANDO) {
+					char *texto = mensagem_obter_texto(&mensagem);
+
+					if (mensagem.tipo == SMT_BEM_VINDO) {
+						char cor[16];
+						
+						sscanf(texto, "Bem vindo, %[^!]! Aguardando todos os jogadores...", jogador_nome);
+						sscanf(jogador_nome, "<span font_weight='bold' color='%[^']'>Jogador %" SCNi8 "</span>", cor, &jogador_id);
+
+						printf("id: %d\nNome: %s\ncor: %s\n", jogador_id, jogador_nome, cor);
+
+						gtk_label_set_markup(GTK_LABEL(jogo_nome_label), jogador_nome);
+					}
+					
+					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), texto);
+				} else {
+					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), mensagem_tipo_str[mensagem.tipo]);
+
+					if (mensagem.tipo == SMT_ENVIANDO_CARTAS) {
+						mensagem_obter_cartas(&mensagem, gjogadores_cartas[jogador_id]);
+						mesa_str_atualizar(jogador_id, estado_jogadores);
+						gtk_label_set_text(GTK_LABEL(jogo_mesa_label), mesa_str);
+						printf("[C: ATUALIZANDO A MESA]\n%s\n", mesa_str);
+					}
+				}
 			}
 		}
 	}
 }
 
 void t_send(GtkEntry *entry, gpointer user_data) {
-	Mensagem mensagem;
-	memcpy(&mensagem, user_data, sizeof mensagem);
+	pthread_mutex_lock(&mutex_mensagem);
+	
+	Mensagem *mensagem = user_data;
+	const char *input = gtk_entry_get_text(entry);
+	uint8_t tamanho_input = strlen(input);
 
-	mensagem_definir_textof(&mensagem, "%s", gtk_entry_get_text(entry));
-
-	int retval = write(ssfd, &mensagem, mensagem_obter_tamanho(&mensagem));
-	if (retval == -1) {
-		handle_error(1, "thread_escrita-write");
+	//Comandos vazios são ignorados.
+	if (tamanho_input == 0) {
+		pthread_mutex_unlock(&mutex_mensagem);
+		return;
 	}
 
 	#ifdef DEBUG
-	printf("lido: <%d> '%s'\n", retval, (char *) mensagem.dados);
-	#endif
+	printf("Input (%d): '%s'\n", tamanho_input, input);
+	#endif //DEBUG
+
+	uint8_t msg_valida = 0;
+
+	if (mensagem->tipo != SMT_CHAT){
+		if (tamanho_input <= 2) {
+			if (mensagem->tipo == SMT_SEU_TURNO) {
+				int8_t indice_carta = atoi(input);
+
+				#ifdef DEBUG
+				printf("indice carta: %d\n", indice_carta);
+				#endif //DEBUG
+
+				//Verifica se o índice da carta é valido. De -3 a -1, significa que a carta foi jogada no monte.
+				if ((indice_carta < 0 && indice_carta >= -NUM_CARTAS_MAO && !gestado.mao_de_10) || indice_carta <= NUM_CARTAS_MAO) {
+					//As cartas são numeradas de 0 a 2. Se o índice for 3, então o jogador pediu truco.
+					//O jogador só pode pedir truco caso atenda algumas condições.
+					if (indice_carta < NUM_CARTAS_MAO || (gestado.time_truco != JOGADOR_TIME(jogador_id) && valor_partida[gestado.valor_partida] < VLR_DOZE)) {
+						mensagem_definir_carta(mensagem, indice_carta);
+						msg_valida = 1;
+					}
+				}
+			} else if (mensagem->tipo == SMT_TRUCO) {
+				uint8_t resposta = atoi(input);
+				if (resposta < RSP_INDEFINIDO) {
+					mensagem_definir_resposta(mensagem, resposta);
+					msg_valida = 1;
+				}
+			}
+		}
+	} else {
+		mensagem_chat(mensagem, input, tamanho_input + 1);
+		msg_valida = 1;
+
+		#ifdef DEBUG
+		mensagem_print(mensagem, "Mensagem do chat");
+		printf("Tamanho da mensagem do chat: %d\n", mensagem_obter_tamanho(mensagem));
+		#endif //DEBUG
+	}
+
+	if (!msg_valida) {
+		#ifdef DEBUG
+		printf("Entrada inválida\n");
+		#endif //DEBUG
+		pthread_mutex_unlock(&mutex_mensagem);
+		return;
+	}
+
+	int retval = write(ssfd, mensagem, mensagem_obter_tamanho(mensagem));
+	
+	#ifdef DEBUG
+	printf("[cliente %d] escreveu %d bytes da msg %d\n", retval, mensagem->tipo);
+	#endif //DEBUG
+	
+	pthread_mutex_unlock(&mutex_mensagem);
+	if (retval == -1) {
+		handle_error(1, "thread_escrita-write");
+	}
 
 	gtk_entry_set_text(entry, "");
 }

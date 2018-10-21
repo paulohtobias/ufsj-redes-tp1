@@ -1,6 +1,7 @@
 #include "servidor.h"
 
 pthread_mutex_t mutex_jogo = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond_jogo = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t mutex_init = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond_init = PTHREAD_COND_INITIALIZER;
 int num_jogadores = 0;
@@ -38,9 +39,9 @@ void jogador_init(Jogador *jogador, uint8_t id, int sfd) {
 	jogador->id = id;
 	jogador->socket_fd = sfd;
 
-	jogador->estado.id = id;
-	jogador->estado.qtd_cartas_mao = 0;
-	carta_virar(&jogador->estado.carta_jogada);
+	gestado_jogadores[jogador->id].id = id;
+	gestado_jogadores[jogador->id].qtd_cartas_mao = 0;
+	carta_virar(&gestado_jogadores[jogador->id].carta_jogada);
 
 	jogador->thread.new_msg = 0;
 	pthread_mutex_init(&jogador->thread.new_msg_mutex, NULL);
@@ -60,7 +61,7 @@ void *t_leitura(void *args) {
 	//Setando o nome do jogador
 	sprintf(
 		jogador_nome,
-		"<span font_weight='bold' color='%s'>Jogador %d: </span>",
+		"<span font_weight='bold' color='%s'>Jogador %d</span>",
 		cores_times[jogador->id], jogador->id
 	);
 
@@ -95,73 +96,62 @@ void *t_leitura(void *args) {
 
 		if (mensagem.tipo == SMT_SEU_TURNO) {
 			pthread_mutex_lock(&mutex_jogo);
-			if (FJ_TURNO && gmao == jogador->id) {
-				int indice_carta;
-				mensagem_obter_carta(&mensagem, &indice_carta);
+			if ((gfase == FJ_TURNO || gfase == FJ_PEDIU_TRUCO) && JOGADOR_ESTA_ATIVO(jogador->id)) {
+				mensagem_obter_carta(&mensagem, &gindice_carta);
 
-				if (indice_carta < NUM_CARTAS_MAO && gjogadores_cartas_jogadas[jogador->id][indice_carta] == 0) {
+				//Verifica se o jogador jogou a carta no monte.
+				carta_no_monte = 0;
+				if (gindice_carta < 0) {
+					carta_no_monte = 1;
+					gindice_carta = -(1 + gindice_carta);
+				}
+
+				if (gindice_carta == NUM_JOGADORES) {
+					gestado.time_truco = JOGADOR_TIME(jogador->id);
+					gfase = FJ_PEDIU_TRUCO;
+					pthread_cond_signal(&cond_jogo);
+				}
+				//Verifica se a carta já foi jogada anteriormente.
+				else if (gjogadores_cartas_jogadas[jogador->id][gindice_carta] == 0) {
 					//Marca a carta como jogada.
-					gjogadores_cartas_jogadas[jogador->id][indice_carta] = 1;
-					
+					gjogadores_cartas_jogadas[jogador->id][gindice_carta] = 1;
+
+					//Vira a carta do jogador, se necessário.
+					if (carta_no_monte) {
+						carta_virar(&gjogadores_cartas[jogador->id][gindice_carta]);
+					}
+
 					//Atualiza o estado do jogador.
-					jogador->estado.carta_jogada = gjogadores_cartas[jogador->id][indice_carta];
-					jogador->estado.qtd_cartas_mao--;
+					gestado_jogadores[jogador->id].carta_jogada = gjogadores_cartas[jogador->id][gindice_carta];
+					gestado_jogadores[jogador->id].qtd_cartas_mao--;
 
-					//Atualiza a carta mais forte
-					if (jogador->estado.carta_jogada.poder > gcarta_mais_forte.poder) {
-						gcarta_mais_forte = jogador->estado.carta_jogada;
-						gjogador_carta_mais_forte = jogador->id;
-						gempate_parcial = 0;
-					} else if (jogador->estado.carta_jogada.poder == gcarta_mais_forte.poder) {
-						gcarta_mais_forte = jogador->estado.carta_jogada;
-						gjogador_carta_mais_forte = jogador->id;
-						gempate_parcial = 1;
-					}
-
-					pthread_mutex_lock(&mutex_broadcast);
-
-					gturno++;
-					//Verifica se chegou no fim da rodada.
-					if (gturno == NUM_JOGADORES) {
-						gvencedor_partida = terminar_rodada();
-
-						if (gvencedor_partida == -1) {
-							mensagem_fim_rodada(&gmensagem);
-						} else {
-							gvencedor_jogo = terminar_partida();
-							
-							if (gvencedor_jogo == -1) {
-								mensagem_fim_partida(&gmensagem);
-							} else {
-								gvencedor_queda = terminar_jogo();
-
-								if (gvencedor_queda == -1) {
-									mensagem_fim_jogo(&gmensagem);
-								} else {
-									mensagem_fim_queda(&mensagem);
-								}
-							}
-						}
-					} else {
-						mensagem_atualizar_estado(&gmensagem, 1, &jogador->estado, 0, NULL);
-					}
-
-					new_msg = MSG_TODOS;
-					pthread_cond_signal(&cond_new_msg);
-					pthread_mutex_unlock(&mutex_broadcast);
-				} else if (indice_carta == NUM_CARTAS_MAO) {
-					// PEDIU TRUCO.
-					#ifdef DEBUG
-					printf("Jogador %d pediu truco\n", jogador->id);
-					#endif //DEBUG
+					gfase = FJ_FIM_TURNO;
+					pthread_cond_signal(&cond_jogo);
 				}
 			}
 			pthread_mutex_unlock(&mutex_jogo);
+		} else if (mensagem.tipo == SMT_TRUCO) {
+			if (FJ_PEDIU_TRUCO && JOGADOR_ESTA_ATIVO(jogador->id)) {
+				uint8_t resposta;
+				mensagem_obter_resposta(&mensagem, &resposta);
+
+				uint8_t indice = (jogador->id > 1);
+				pthread_mutex_lock(&mutex_jogo);
+				gresposta[indice] = resposta;
+
+				//Verifica se ambos responderam e se as respostas são iguais.
+				if (gresposta[!indice] != RSP_INDEFINIDO && gresposta[0] == gresposta[1]) {
+					gjogadores_ativos = JA_JOGADOR(gestado.jogador_atual);
+					//gfase = FJ_TURNO;
+					pthread_cond_signal(&cond_jogo);
+				}
+				pthread_mutex_unlock(&mutex_jogo);
+			}
 		} else if (mensagem.tipo == SMT_CHAT) {
 			pthread_mutex_lock(&mutex_broadcast);
 			
 			mensagem_chat(&gmensagem, NULL, 0);
-			mensagem_definir_textof(&gmensagem, "%s%s\n", jogador_nome, mensagem.dados);
+			mensagem_definir_textof(&gmensagem, "%s: %s\n", jogador_nome, mensagem.dados);
 			
 			new_msg = MSG_TODOS;
 			pthread_cond_signal(&cond_new_msg);
@@ -174,8 +164,6 @@ void *t_leitura(void *args) {
 }
 
 void *t_escrita(void *args) {
-	int i;
-
 	while (1) {
 		//Espera uma nova mensagem chegar.
 		pthread_mutex_lock(&mutex_new_msg);
@@ -186,15 +174,26 @@ void *t_escrita(void *args) {
 
 		//Envia a mensagem aos clientes.
 		pthread_mutex_lock(&mutex_broadcast);
-		for (i = 0; i < NUM_JOGADORES; i++) {
-			if (((1 << i) & new_msg) && jogadres[i].id != -1) {
-				#ifdef DEBUG
-				printf("[Servidor] enviando msg (%d) para %d\n", gmensagem.tipo, i);
-				#endif //DEBUG
-				write(jogadres[i].socket_fd, &gmensagem, mensagem_obter_tamanho(&gmensagem));
-			}
-		}
+		enviar_mensagem(&gmensagem, new_msg);
 		new_msg = MSG_NINGUEM;
 		pthread_mutex_unlock(&mutex_broadcast);
+	}
+}
+
+void enviar_mensagem(const Mensagem *mensagem, uint8_t new_msg) {
+	int i, retval;
+	for (i = 0; i < NUM_JOGADORES; i++) {
+		//Só envia para quem está autorizado a receber.
+		if (((1 << i) & new_msg) && jogadores[i].id != -1) {
+			#ifdef DEBUG
+			printf("[Servidor] enviando msg %d (%s) para %d\n", mensagem->tipo, mensagem_tipo_str[mensagem->tipo], jogadores[i].id);
+			#endif //DEBUG
+			
+			retval = write(jogadores[i].socket_fd, mensagem, mensagem_obter_tamanho(mensagem));
+			
+			#ifdef DEBUG
+			printf("[Servidor] escreveu %d bytes na msg %d praa %d\n", retval, mensagem->tipo, jogadores[i].id);
+			#endif //DEBUG
+		}
 	}
 }

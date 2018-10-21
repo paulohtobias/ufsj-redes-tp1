@@ -14,8 +14,10 @@ typedef enum FASE_JOGO {
 	FJ_AGUARDANDO_INICIO,
 	FJ_ENVIANDO_CARTAS,
 	FJ_TURNO,
+	FJ_FIM_TURNO,
 	FJ_PEDIU_TRUCO,
 	FJ_EMPATE,
+	FJ_FIM_RODADA,
 	FJ_FIM_PARTIDA,
 	FJ_FIM_JOGO,
 	FJ_FIM_QUEDA
@@ -36,17 +38,26 @@ typedef enum VALOR_PARTIDA {
 	VLR_NOVE = 10,
 	VLR_DOZE = 12
 } VALOR_PARTIDA;
+#define VLR_MAO_10 4
 
 typedef struct EstadoJogo {
+	//Pontuação
 	uint8_t rodadas[2];  // Melhor de 3
 	uint8_t pontos[2];   // [0, 12]
-	uint8_t mao_de_10;
-	VALOR_PARTIDA valor_partida;
 	uint8_t jogos[2];    // 0 ou 1
+
+	int8_t jogador_atual;
+	
+	int8_t time_truco;       //id do último time que pediu truco. -1 se ninguém pediu ainda.
+	int8_t mao_de_10;        //0 ou 1: time na mão de 10. | -1: ninguém na mão de 10.
+	uint8_t valor_partida;   //índice no vetor global que indica quanto vale a partida.
+	Carta carta_mais_forte;
+	int8_t jogador_carta_mais_forte;
+	uint8_t empate_parcial;
 } EstadoJogo;
 
 typedef struct EstadoJogador {
-	uint8_t id;
+	int8_t id;
 	uint8_t qtd_cartas_mao;
 	Carta carta_jogada;
 } EstadoJogador;
@@ -54,37 +65,51 @@ typedef struct EstadoJogador {
 typedef enum RESPOSTAS {
 	RSP_NAO,
 	RSP_SIM,
-	RSP_AUMENTO
+	RSP_AUMENTO,
+	RSP_INDEFINIDO
 } RESPOSTAS;
-
 
 /* VARIÁVEIS GLOBAIS */
 extern char cores_times[NUM_JOGADORES][16];
+extern uint8_t valor_partida[5];
 extern char valor_partida_str[5][10];
 char pontuacao_str[300];
+char mesa_str[512];
 
 extern Carta gbaralho[NUM_CARTAS];
-extern EstadoJogo gpontuacao;
+extern EstadoJogo gestado;
+int8_t gturno;
+int8_t gmao;
+uint8_t gfase;
 extern int8_t gvencedor_jogo;
 extern int8_t gvencedor_partida;
 extern int8_t gvencedor_queda;
-extern int8_t gturno;
-extern int8_t gmao;
-extern FASE_JOGO gfase;
+
 extern JOGADORES_ATIVOS gjogadores_ativos;
+
+extern EstadoJogador gestado_jogadores[NUM_JOGADORES];
 extern Carta gjogadores_cartas[NUM_JOGADORES][NUM_CARTAS_MAO];
-extern int gjogadores_cartas_jogadas[NUM_JOGADORES][NUM_CARTAS_MAO];
-extern Carta gcarta_mais_forte;
-extern int8_t gjogador_carta_mais_forte;
-extern int gempate_parcial;
+extern int8_t gindice_carta;
+uint8_t carta_no_monte;
+extern uint8_t gjogadores_cartas_jogadas[NUM_JOGADORES][NUM_CARTAS_MAO];
+uint8_t gresposta[2];
+
 
 /* FUNÇÕES */
-int terminar_rodada();
+#define JOGADOR_TIME(id) (id % 2)
 
-int terminar_partida();
+#define JOGADOR_ESTA_ATIVO(id) ((gjogadores_ativos & JA_JOGADOR(id)) != 0)
 
-int terminar_jogo();
+void iniciar_rodada();
 
-void pontuacao_str_atualizar(EstadoJogo *pontuacao);
+int8_t terminar_rodada(int8_t vencedor_partida);
+
+int8_t terminar_partida();
+
+int8_t terminar_jogo();
+
+void pontuacao_str_atualizar();
+
+void mesa_str_atualizar(int8_t jogador_id, const EstadoJogador *estado_jogadores);
 
 #endif //TRUCO_H

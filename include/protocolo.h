@@ -19,6 +19,7 @@
 
 
 /* ENUMS E TIPOS */
+//todo: smt_jogada_aceita
 typedef enum MENSAGEM_TIPO {
 	SMT_ERRO,
 	SMT_BEM_VINDO,
@@ -45,10 +46,12 @@ enum {
 };
 #define MSG_JOGADOR(id) (1 << id)
 
+//todo: separar [dados] em três atributos: EstadoJogo, EstadoJogador[NUM_JOGADORES], dados[BUFF_SIZE]
+//não esquecer de consertar todas as funções que usam esses atributos.
 typedef struct Mensagem {
 	uint8_t estados;                // Quantos estados serão atualizados.
-	uint8_t atualizar_pontuacao;    // Se é pra atualizar a pontuação.
-	MENSAGEM_TIPO tipo;             // Tipo da mensagem.
+	uint8_t atualizar_estado_jogo;  // Se é pra atualizar a pontuação.
+	uint8_t tipo;                   // Tipo da mensagem.
 	uint8_t tamanho_dados;          // Tamanho dos dados da mensagem.
 	uint8_t dados[BUFF_SIZE];       // Dados.
 } Mensagem;
@@ -59,15 +62,15 @@ int mensagem_enviar(const Mensagem *mensagem, int sfd);
 
 size_t mensagem_obter_tamanho(const Mensagem *mensagem);
 
-void mensagem_definir(Mensagem *mensagem, MENSAGEM_TIPO tipo, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_pontuacao, const EstadoJogo *estado_jogo, uint8_t *dados, uint8_t tamanho_dados);
+void mensagem_definir(Mensagem *mensagem, MENSAGEM_TIPO tipo, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_estado_jogo, const EstadoJogo *estado_jogo, uint8_t *dados, uint8_t tamanho_dados);
 
 void mensagem_simples(Mensagem *mensagem, MENSAGEM_TIPO tipo);
 
-void mensagem_atualizar_estado(Mensagem *mensagem, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_pontuacao, const EstadoJogo *estado_jogo);
+void mensagem_atualizar_estado(Mensagem *mensagem, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_estado_jogo, const EstadoJogo *estado_jogo);
 
 void mensagem_bem_vindo(Mensagem *mensagem);
 
-void mensagem_processando(Mensagem *mensagem, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_pontuacao, const EstadoJogo *estado_jogo, char *texto, uint8_t tamanho_texto);
+void mensagem_processando(Mensagem *mensagem, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_estado_jogo, const EstadoJogo *estado_jogo, char *texto, uint8_t tamanho_texto);
 
 void mensagem_enviando_cartas(Mensagem *mensagem, const Carta cartas[NUM_CARTAS_MAO]);
 
@@ -91,18 +94,26 @@ void mensagem_fim_queda(Mensagem *mensagem);
 
 void mensagem_chat(Mensagem *mensagem, char *texto, uint8_t tamanho_texto);
 
-void mensagem_definir_textof(Mensagem *mensagem, const char *format, ...);
 
-void mensagem_print(const Mensagem *mensagem, const char *titulo);
-
-void mensagem_obter_pontuacao(const Mensagem *mensagem, EstadoJogo *pontuacao);
+void mensagem_obter_estado_jogo(const Mensagem *mensagem, EstadoJogo *estado_jogo);
 
 void mensagem_obter_estado_jogadores(const Mensagem *mensagem, EstadoJogador estado_jogadores[NUM_JOGADORES]);
 
-void mensagem_obter_carta(const Mensagem *mensagem, int *indice_carta);
+void mensagem_obter_carta(const Mensagem *mensagem, int8_t *indice_carta);
+
+void mensagem_definir_carta(Mensagem *mensagem, int8_t indice_carta);
 
 void mensagem_obter_cartas(const Mensagem *mensagem, Carta cartas[NUM_CARTAS_MAO]);
 
+void mensagem_obter_resposta(const Mensagem *mensagem, uint8_t *resposta);
+
+void mensagem_definir_resposta(Mensagem *mensagem, RESPOSTAS resposta);
+
 char *mensagem_obter_texto(const Mensagem *mensagem);
+
+void mensagem_definir_textof(Mensagem *mensagem, const char *format, ...);
+
+
+void mensagem_print(const Mensagem *mensagem, const char *titulo);
 
 #endif //PROTOCOLO_H

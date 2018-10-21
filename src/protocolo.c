@@ -20,23 +20,23 @@ int mensagem_enviar(const Mensagem *mensagem, int sfd) {
 }
 
 size_t mensagem_obter_tamanho(const Mensagem *mensagem) {
-	return ((void *) mensagem->dados - (void *) &mensagem->estados) + mensagem->tamanho_dados;
+	return ((void *) mensagem->dados - (void *) mensagem) + mensagem->tamanho_dados;
 }
 
-void mensagem_definir(Mensagem *mensagem, MENSAGEM_TIPO tipo, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_pontuacao, const EstadoJogo *estado_jogo, uint8_t *dados, uint8_t tamanho_dados) {
+void mensagem_definir(Mensagem *mensagem, MENSAGEM_TIPO tipo, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_estado_jogo, const EstadoJogo *estado_jogo, uint8_t *dados, uint8_t tamanho_dados) {
 	mensagem->tipo = tipo;
 	mensagem->estados = qtd_estados;
-	mensagem->atualizar_pontuacao = atualizar_pontuacao;
+	mensagem->atualizar_estado_jogo = atualizar_estado_jogo;
 
 	mensagem->tamanho_dados = 0;
 	memset(mensagem->dados, 0, BUFF_SIZE);
 	memcpy(mensagem->dados, estado_jogadores, mensagem->estados * sizeof(EstadoJogador));
 	mensagem->tamanho_dados = mensagem->estados * sizeof(EstadoJogador);
-	if (atualizar_pontuacao) {
+	if (atualizar_estado_jogo) {
 		memcpy(&mensagem->dados[mensagem->tamanho_dados], estado_jogo, sizeof(EstadoJogo));
 		mensagem->tamanho_dados += sizeof(EstadoJogo);
 	}
-	memcpy(&mensagem->dados[mensagem->tamanho_dados], &dados, tamanho_dados);
+	memcpy(&mensagem->dados[mensagem->tamanho_dados], dados, tamanho_dados);
 	mensagem->tamanho_dados += tamanho_dados;
 }
 
@@ -44,7 +44,7 @@ void mensagem_simples(Mensagem *mensagem, MENSAGEM_TIPO tipo) {
 	mensagem_definir(mensagem, tipo, 0, NULL, 0, NULL, NULL, 0);
 }
 
-void mensagem_atualizar_estado(Mensagem *mensagem, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_pontuacao, const EstadoJogo *estado_jogo) {
+void mensagem_atualizar_estado(Mensagem *mensagem, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_estado_jogo, const EstadoJogo *estado_jogo) {
 	mensagem_definir(mensagem, SMT_PROCESSANDO, qtd_estados, estado_jogadores, 1, estado_jogo, NULL, 0);
 }
 
@@ -52,8 +52,8 @@ void mensagem_bem_vindo(Mensagem *mensagem) {
 	mensagem_simples(mensagem, SMT_BEM_VINDO);
 }
 
-void mensagem_processando(Mensagem *mensagem, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_pontuacao, const EstadoJogo *estado_jogo, char *texto, uint8_t tamanho_texto) {
-	mensagem_definir(mensagem, SMT_PROCESSANDO, qtd_estados, estado_jogadores, atualizar_pontuacao, estado_jogo, (uint8_t *) texto, tamanho_texto);
+void mensagem_processando(Mensagem *mensagem, uint8_t qtd_estados, const EstadoJogador *estado_jogadores, uint8_t atualizar_estado_jogo, const EstadoJogo *estado_jogo, char *texto, uint8_t tamanho_texto) {
+	mensagem_definir(mensagem, SMT_PROCESSANDO, qtd_estados, estado_jogadores, atualizar_estado_jogo, estado_jogo, (uint8_t *) texto, tamanho_texto);
 }
 
 void mensagem_enviando_cartas(Mensagem *mensagem, const Carta cartas[NUM_CARTAS_MAO]) {
@@ -92,25 +92,10 @@ void mensagem_chat(Mensagem *mensagem, char *texto, uint8_t tamanho_texto) {
 	mensagem_definir(mensagem, SMT_CHAT, 0, NULL, 0, NULL, (uint8_t *) texto, tamanho_texto);
 }
 
-void mensagem_definir_textof(Mensagem *mensagem, const char *format, ...) {
-	//mensagem_definir(mensagem, SMT_CHAT, 0, NULL, 0, NULL, NULL, 0);
-	
-	va_list arg;
-	va_start(arg, format);
-	vsnprintf((char *) mensagem->dados, BUFF_SIZE, format, arg);
-	va_end(arg);
-	
-	mensagem->tamanho_dados = mensagem->estados * sizeof(EstadoJogador) + mensagem->atualizar_pontuacao * sizeof(EstadoJogo) + strlen((char *) mensagem->dados) + 1;
-}
-
-void mensagem_print(const Mensagem *mensagem, const char *titulo) {
-	printf("%s Mensagem [%2d (%s)]: '%s'\n", titulo, mensagem->tipo, mensagem_tipo_str[mensagem->tipo], mensagem_obter_texto(mensagem));
-}
-
-void mensagem_obter_pontuacao(const Mensagem *mensagem, EstadoJogo *pontuacao) {
+void mensagem_obter_estado_jogo(const Mensagem *mensagem, EstadoJogo *estado_jogo) {
 	int indice = mensagem->estados * sizeof(EstadoJogador);
 
-	memcpy(pontuacao, &mensagem->dados[indice], sizeof(EstadoJogo));
+	memcpy(estado_jogo, &mensagem->dados[indice], sizeof(EstadoJogo));
 }
 
 void mensagem_obter_estado_jogadores(const Mensagem *mensagem, EstadoJogador estado_jogadores[NUM_JOGADORES]) {
@@ -121,15 +106,45 @@ void mensagem_obter_estado_jogadores(const Mensagem *mensagem, EstadoJogador est
 	}
 }
 
-void mensagem_obter_carta(const Mensagem *mensagem, int *indice_carta) {
-	memcpy(indice_carta, mensagem->dados, sizeof(Carta));
+void mensagem_obter_carta(const Mensagem *mensagem, int8_t *indice_carta) {
+	memcpy(indice_carta, mensagem->dados, sizeof *indice_carta);
+}
+
+void mensagem_definir_carta(Mensagem *mensagem, int8_t indice_carta) {
+	memcpy(mensagem->dados, &indice_carta, sizeof indice_carta);
+	mensagem->tamanho_dados = sizeof indice_carta;
 }
 
 void mensagem_obter_cartas(const Mensagem *mensagem, Carta cartas[NUM_CARTAS_MAO]) {
-	memcpy(cartas, mensagem->dados, NUM_CARTAS_MAO * sizeof(Carta));
+	int indice = mensagem->estados * sizeof(EstadoJogador) + mensagem->atualizar_estado_jogo * sizeof(EstadoJogo);
+	memcpy(cartas, &mensagem->dados[indice], NUM_CARTAS_MAO * sizeof(Carta));
+}
+
+void mensagem_obter_resposta(const Mensagem *mensagem, uint8_t *resposta) {
+	memcpy(resposta, mensagem->dados, sizeof *resposta);
+}
+
+void mensagem_definir_resposta(Mensagem *mensagem, RESPOSTAS resposta) {
+	memcpy(mensagem->dados, &resposta, sizeof resposta);
+	mensagem->tamanho_dados = sizeof resposta;
 }
 
 char *mensagem_obter_texto(const Mensagem *mensagem) {
-	int indice = mensagem->estados * sizeof(EstadoJogador) + mensagem->atualizar_pontuacao * sizeof(EstadoJogo);
+	int indice = mensagem->estados * sizeof(EstadoJogador) + mensagem->atualizar_estado_jogo * sizeof(EstadoJogo);
 	return (char *) &mensagem->dados[indice];
+}
+
+void mensagem_definir_textof(Mensagem *mensagem, const char *format, ...) {
+	int indice = mensagem->estados * sizeof(EstadoJogador) + mensagem->atualizar_estado_jogo * sizeof(EstadoJogo);
+	
+	va_list arg;
+	va_start(arg, format);
+	vsnprintf((char *) &mensagem->dados[indice], BUFF_SIZE, format, arg);
+	va_end(arg);
+	
+	mensagem->tamanho_dados = indice + strlen((char *) mensagem->dados) + 1;
+}
+
+void mensagem_print(const Mensagem *mensagem, const char *titulo) {
+	printf("%s Mensagem [%2d (%s)]: '%s'\n", titulo, mensagem->tipo, mensagem_tipo_str[mensagem->tipo], mensagem_obter_texto(mensagem));
 }

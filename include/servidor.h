@@ -17,8 +17,6 @@ typedef struct Jogador {
 	int8_t id;			// [0-4]
 	int socket_fd;
 
-	EstadoJogador estado;
-
 	ThreadJogador thread;
 } Jogador;
 
@@ -26,12 +24,14 @@ typedef struct Jogador {
 /* VARIÁVEIS GLOBAIS*/
 pthread_t thread_escrita;
 extern pthread_mutex_t mutex_jogo;
+extern pthread_mutex_t mutex_jogo;
+extern pthread_cond_t cond_jogo;
 extern pthread_mutex_t mutex_broadcast;
 extern pthread_mutex_t mutex_new_msg;
 extern pthread_cond_t cond_new_msg;
 extern uint8_t new_msg;
 Mensagem gmensagem;
-Jogador jogadres[NUM_JOGADORES];
+Jogador jogadores[NUM_JOGADORES];
 
 
 /* FUNÇÕES */
@@ -44,5 +44,7 @@ void jogador_init(Jogador *jogador, uint8_t id, int sfd);
 void *t_leitura(void *args);
 
 void *t_escrita(void *args);
+
+void enviar_mensagem(const Mensagem *mensagem, uint8_t new_msg);
 
 #endif //SERVIDOR_H
