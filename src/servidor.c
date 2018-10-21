@@ -66,7 +66,7 @@ void *t_leitura(void *args) {
 	pthread_mutex_lock(&mutex_broadcast);
 	mensagem_bem_vindo(&gmensagem, jogador->id);
 	new_msg = MSG_JOGADOR(jogador->id);
-	pthread_cond_signal(&cond_new_msg);
+	enviar_mensagem(&gmensagem, new_msg);
 	pthread_mutex_unlock(&mutex_broadcast);
 
 	pthread_mutex_lock(&mutex_init);
@@ -157,29 +157,12 @@ void *t_leitura(void *args) {
 			mensagem_definir_textof(&gmensagem, "%s: %s\n", jogador_nome, mensagem.dados);
 			
 			new_msg = MSG_TODOS;
-			pthread_cond_signal(&cond_new_msg);
+			enviar_mensagem(&gmensagem, new_msg);
 			pthread_mutex_unlock(&mutex_broadcast);
 		}
 
 		if (jogador->thread.new_msg) {
 		}
-	}
-}
-
-void *t_escrita(void *args) {
-	while (1) {
-		//Espera uma nova mensagem chegar.
-		//pthread_mutex_lock(&mutex_new_msg);
-		pthread_mutex_lock(&mutex_broadcast);
-		while (new_msg == MSG_NINGUEM) {
-			pthread_cond_wait(&cond_new_msg, &mutex_broadcast);
-		}
-		//pthread_mutex_unlock(&mutex_new_msg);
-
-		//Envia a mensagem aos clientes.
-		enviar_mensagem(&gmensagem, new_msg);
-		new_msg = MSG_NINGUEM;
-		pthread_mutex_unlock(&mutex_broadcast);
 	}
 }
 

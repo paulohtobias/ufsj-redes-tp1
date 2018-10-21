@@ -168,8 +168,8 @@ void pontuacao_str_atualizar() {
 	snprintf(pontuacao_str, 300,
 		"<b>Partida atual</b>: %s (%d pontos)\n"
 		"<b>Jogos-Pontos</b>:\n"
-			"\t<span font_weight='bold' color='%s'>Time 1: %d-%02d</span>\n"
-			"\t<span font_weight='bold' color='%s'>Time 2: %d-%02d</span>\n",
+			"\t<span font_weight='bold' color='%s'>Time 1: %d-%2d</span>\n"
+			"\t<span font_weight='bold' color='%s'>Time 2: %d-%2d</span>\n",
 		valor_partida_str[gestado.valor_partida], valor_partida[gestado.valor_partida],
 		cores_times[0], gestado.jogos[0], gestado.pontos[0],
 		cores_times[1], gestado.jogos[1], gestado.pontos[1]

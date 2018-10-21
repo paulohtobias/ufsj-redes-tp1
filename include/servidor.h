@@ -48,8 +48,6 @@ void jogador_init(Jogador *jogador, uint8_t id, int sfd);
 
 void *t_leitura(void *args);
 
-void *t_escrita(void *args);
-
 void enviar_mensagem(const Mensagem *mensagem, uint8_t new_msg);
 
 #endif //SERVIDOR_H

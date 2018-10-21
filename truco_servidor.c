@@ -8,8 +8,6 @@ int main(int argc, char *argv[]) {
 
 	int chat_socket_fd = criar_socket_servidor();
 
-	pthread_create(&thread_escrita, NULL, t_escrita, NULL);
-
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		jogadores[i].id = -1;
 	}
@@ -68,7 +66,8 @@ int main(int argc, char *argv[]) {
 					#ifdef DEBUG
 					printf("Enviando cartas para o jogador %d\n", jogadores[i].id);
 					#endif //DEBUG
-					pthread_cond_signal(&cond_new_msg);
+					//pthread_cond_signal(&cond_new_msg);
+					enviar_mensagem(&gmensagem, new_msg);
 					pthread_mutex_unlock(&mutex_broadcast);
 				}
 				pthread_mutex_unlock(&mutex_jogo);
@@ -77,7 +76,8 @@ int main(int argc, char *argv[]) {
 				pthread_mutex_lock(&mutex_broadcast);
 				mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
 				new_msg = MSG_TODOS;
-				pthread_cond_signal(&cond_new_msg);
+				//pthread_cond_signal(&cond_new_msg);
+				enviar_mensagem(&gmensagem, new_msg);
 				pthread_mutex_unlock(&mutex_broadcast);
 
 				//While da partida: cada iteração é uma rodada (JOGO)
@@ -107,7 +107,8 @@ int main(int argc, char *argv[]) {
 						pthread_mutex_lock(&mutex_broadcast);
 						mensagem_seu_turno(&gmensagem);
 						new_msg = MSG_JOGADOR(gestado.jogador_atual);
-						pthread_cond_signal(&cond_new_msg);
+						//pthread_cond_signal(&cond_new_msg);
+						enviar_mensagem(&gmensagem, new_msg);
 						pthread_mutex_unlock(&mutex_broadcast);
 						pthread_mutex_unlock(&mutex_jogo);
 
@@ -177,7 +178,8 @@ int main(int argc, char *argv[]) {
 							pthread_mutex_lock(&mutex_broadcast);
 							mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
 							new_msg = MSG_TODOS;
-							pthread_cond_signal(&cond_new_msg);
+							//pthread_cond_signal(&cond_new_msg);
+							enviar_mensagem(&gmensagem, new_msg);
 							pthread_mutex_unlock(&mutex_broadcast);
 
 							//todo: enviar mensagem de jogada aceita.
@@ -192,26 +194,34 @@ int main(int argc, char *argv[]) {
 								#endif //DEBUG
 
 								pthread_mutex_unlock(&mutex_jogo);
-								gturno = 0;//break;
+								break;
 							}
 							pthread_mutex_unlock(&mutex_jogo);
 						}
 					}
 
+					pthread_mutex_lock(&mutex_jogo);
 					gfase = FJ_FIM_RODADA;
 
 					//Verificando se houve vencedor na rodada. (JOGO)
 					gvencedor_partida = terminar_rodada(gvencedor_partida);
+					#ifdef DEBUG
+					printf("Vencedor da partida: %d (%d pontos)\n", gvencedor_partida, valor_partida[gestado.valor_partida]);
+					#endif //DEBUG
+					
 					if (gvencedor_partida != -1) {
+						pthread_mutex_unlock(&mutex_jogo);
 						break;
 					}
+					pthread_mutex_unlock(&mutex_jogo);
 				}
 
 				//Atualiza o estado de todos os jogadores.
 				pthread_mutex_lock(&mutex_broadcast);
 				mensagem_fim_partida(&gmensagem, gvencedor_partida);
 				new_msg = MSG_TODOS;
-				pthread_cond_signal(&cond_new_msg);
+				//pthread_cond_signal(&cond_new_msg);
+				enviar_mensagem(&gmensagem, new_msg);
 				pthread_mutex_unlock(&mutex_broadcast);
 			}
 		}
