@@ -180,7 +180,7 @@ void t_send(GtkEntry *entry, gpointer user_data) {
 				 * Se o índice for negativo (entre -3 e -1), significa que a carta foi jogada no monte.
 				 */
 				//Verifica se o índice da carta é valido.
-				if ((indice_carta >= 0 && indice_carta <= NUM_CARTAS_MAO) || (indice_carta < 0 && indice_carta >= -NUM_CARTAS_MAO && gestado.mao_de_10 == -1)) {
+				if ((indice_carta >= 0 && indice_carta <= NUM_CARTAS_MAO) || (indice_carta < 0 && indice_carta >= -NUM_CARTAS_MAO && !gestado.mao_de_10)) {
 					//O jogador só pode pedir truco caso atenda algumas condições.
 					if (indice_carta != 0 || (gestado.time_truco != JOGADOR_TIME(jogador_id) && valor_partida[gestado.valor_partida] < VLR_DOZE)) {
 						mensagem_definir_carta(mensagem, indice_carta);

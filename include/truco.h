@@ -51,7 +51,7 @@ typedef struct EstadoJogo {
 	uint8_t empate_parcial;  // Se houve empate na rodada até o momento.
 	uint8_t empate;          // Se a primeira rodada terminou em empate.
 	int8_t time_truco;       // id do último time que pediu truco. -1 se ninguém pediu ainda.
-	int8_t mao_de_10;        // 0 ou 1: time na mão de 10. | -1: ninguém na mão de 10.
+	uint8_t mao_de_10;        // Bitmask. O bit correspondente ao id do time indica se está na mão de 10.
 	uint8_t valor_partida;   // índice no vetor global que indica quanto vale a partida.
 	Carta carta_mais_forte;
 	int8_t jogador_carta_mais_forte;
@@ -105,6 +105,8 @@ uint8_t gresposta[2];
 #define JOGADOR_TIME_ADV(id) (!(id % 2))
 
 #define JOGADOR_ESTA_ATIVO(id) ((gjogadores_ativos & JA_JOGADOR(id)) != 0)
+
+#define MAO_DE_FERRO (gestado.mao_de_10 == 3)
 
 void iniciar_rodada();
 

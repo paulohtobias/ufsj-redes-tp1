@@ -75,7 +75,7 @@ Carta gbaralho[NUM_CARTAS] = {
 	{'4', COPAS, 1, 0},
 	{'4', OUROS, 1, 0}
 };
-EstadoJogo gestado = {{0, 0}, {0, 0}, {0, 0}, -1, 0, 0, -1, -1, 0, {'-', BARALHO_VIRADO, 0, 0}, -1};
+EstadoJogo gestado = {{0, 0}, {0, 0}, {0, 0}, -1, 0, 0, -1, 0, 0, {'-', BARALHO_VIRADO, 0, 0}, -1};
 int8_t gvencedor_primeira_rodada = -1;
 int8_t gvencedor_partida = -1;
 int8_t gvencedor_jogo = -1;
@@ -116,14 +116,14 @@ int8_t terminar_rodada(int8_t vencedor_partida) {
 			int valor = valor_partida[gestado.valor_partida];
 
 			#ifdef DEBUG
-			valor = VLR_DOZE;
+			valor = VLR_NOVE;
 			#endif //DEBUG
 			
 			gestado.pontos[i] += valor;
 
 			//Entrando na mão de 10.
-			if (gestado.pontos[i] == 10 && gestado.mao_de_10 == -1) {
-				gestado.mao_de_10 = i;
+			if (gestado.pontos[i] == 10) {
+				gestado.mao_de_10 |= 1 << i;
 				gestado.valor_partida = 1;
 
 				#if defined DEBUG || defined LOG
@@ -134,7 +134,7 @@ int8_t terminar_rodada(int8_t vencedor_partida) {
 			gestado.jogador_carta_mais_forte = -1;
 
 			//Resetando o valor da partida.
-			if (gestado.mao_de_10 == -1) {
+			if (!gestado.mao_de_10) {
 				gestado.valor_partida = 0;
 			} else {
 				gestado.valor_partida = 1;
@@ -163,7 +163,7 @@ int8_t terminar_partida() {
 		if (gestado.pontos[i] >= 12) {
 			gestado.pontos[0] = 0;
 			gestado.pontos[1] = 0;
-			gestado.mao_de_10 = -1;
+			gestado.mao_de_10 = 0;
 			gestado.valor_partida = 0;
 			gestado.jogos[i]++;
 			return i;
@@ -208,7 +208,7 @@ void pontuacao_str_atualizar() {
 		cores_times[0], gestado.jogos[0], gestado.pontos[0], gestado.rodadas[0],
 		cores_times[1], gestado.jogos[1], gestado.pontos[1], gestado.rodadas[1],
 
-		gestado.mao_de_10 != -1 ? "Mão de 10" : valor_partida_str[gestado.valor_partida], valor_partida[gestado.valor_partida],
+		gestado.mao_de_10 ? "Mão de 10" : valor_partida_str[gestado.valor_partida], valor_partida[gestado.valor_partida],
 		gestado.empate_parcial ? "Sim": "Não",
 		gestado.empate ? "\t<span font_weight='bold'>Houve empate. Me mostre sua maior carta.</span>\n" : ""
 	);
@@ -219,7 +219,7 @@ void mesa_str_atualizar(int8_t jogador_id) {
 	char cartas_mao_str[NUM_JOGADORES][40];
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		memset(cartas_mao_str[i], 0, 40);
-		if (i == jogador_id) {
+		if (i == jogador_id && !MAO_DE_FERRO) {
 			sprintf(
 				cartas_mao_str[i],
 				" |%c%s| |%c%s| |%c%s|",
