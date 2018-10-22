@@ -1,6 +1,11 @@
 #include "cliente.h"
 
 int main(int argc, char *argv[]) {
+	in_addr_t endereco = INADDR_ANY;
+	if (argc > 1) {
+		inet_pton(AF_INET, argv[1], &endereco);
+	}
+
 	pthread_mutex_init(&mutex_mensagem, NULL);
 	pthread_mutex_init(&mutex_gui, NULL);
 	jogador_id = -1;
@@ -13,8 +18,8 @@ int main(int argc, char *argv[]) {
 	GtkWidget *window = GTK_WIDGET(gtk_builder_get_object(builder, "window"));
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(encerrar_programa), NULL);
 	// Reposicionando a janela.
-	if (argc >= 3) {
-		gtk_window_move(GTK_WINDOW(window), atoi(argv[1]), atoi(argv[2]));
+	if (argc >= 4) {
+		gtk_window_move(GTK_WINDOW(window), atoi(argv[2]), atoi(argv[3]));
 	}
 
 	//GUI - Jogo
@@ -33,7 +38,7 @@ int main(int argc, char *argv[]) {
 	gtk_window_present(GTK_WINDOW(window));
 
 	//Socket
-	ssfd = criar_socket_cliente();
+	ssfd = criar_socket_cliente(endereco);
 
 	pthread_create(&thread, NULL, t_receive, NULL);
 

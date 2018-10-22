@@ -2,6 +2,8 @@
 #define CLIENTE_H
 
 #include "conexao.h"
+#include <arpa/inet.h>
+#include <errno.h>
 #include <ctype.h>
 #include <gtk/gtk.h>
 
@@ -25,7 +27,7 @@ GtkBuilder *builder;
 
 
 /* FUNÇÕES */
-int criar_socket_cliente();
+int criar_socket_cliente(in_addr_t endereco);
 
 void encerrar_programa();
 

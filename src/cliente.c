@@ -1,8 +1,13 @@
 #include "cliente.h"
-#include <errno.h>
 
-int criar_socket_cliente() {
-	return criar_socket(INADDR_ANY, PORTA, CONEXAO_MODO_CLIENTE);
+int criar_socket_cliente(in_addr_t endereco) {
+	#if defined DEBUG || LOG
+	char sip[21];
+	inet_ntop(AF_INET, &endereco, sip, 20);
+	printf("Conectando ao ip %s\n", sip);
+	#endif //DEBUG
+	
+	return criar_socket(endereco, PORTA, CONEXAO_MODO_CLIENTE);
 }
 
 void encerrar_programa() {

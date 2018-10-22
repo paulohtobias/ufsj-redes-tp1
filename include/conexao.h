@@ -3,7 +3,7 @@
 
 #include "protocolo.h"
 
-#define PORTA 2222
+#define PORTA 8080
 
 enum {
 	CONEXAO_MODO_CLIENTE,
