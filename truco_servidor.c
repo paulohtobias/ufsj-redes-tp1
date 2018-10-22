@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
 					pthread_mutex_lock(&mutex_jogo);
 					//Verifica se deu empate. Se for na primeira rodada ou se o desempate da segunda
 					//terminar empatado, então os jogadores devem mostrar sua maior carta.
-					if (gestado.empate_parcial && (rodada == 0 || gestado.empate)) {
+					if (gvencedor_partida == -1 && gestado.empate_parcial && (rodada == 0 || gestado.empate)) {
 						gestado.empate = 1;
 						
 						//Informa que houve empate.

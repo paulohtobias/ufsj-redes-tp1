@@ -114,17 +114,13 @@ int8_t terminar_rodada(int8_t vencedor_partida) {
 		}
 		if (gestado.rodadas[i] == 2 || i == vencedor_partida) {
 			int valor = valor_partida[gestado.valor_partida];
-
-			// Se o adversário estiver na mão de 10
-			if (gestado.mao_de_10 == !i) {
-				valor = VLR_MAO_10;
-			}
 			
 			gestado.pontos[i] += valor;
 
 			//Entrando na mão de 10.
 			if (gestado.pontos[i] == 10 && gestado.mao_de_10 == -1) {
 				gestado.mao_de_10 = i;
+				gestado.valor_partida = 1;
 
 				#if defined DEBUG || defined LOG
 				printf("O time %d entrou na mão de 10.\n", i);
@@ -132,7 +128,15 @@ int8_t terminar_rodada(int8_t vencedor_partida) {
 			}
 
 			gestado.jogador_carta_mais_forte = -1;
-			gestado.valor_partida = 0;
+
+			//Resetando o valor da partida.
+			if (gestado.mao_de_10 == -1) {
+				gestado.valor_partida = 0;
+			} else {
+				gestado.valor_partida = 1;
+			}
+
+			gestado.time_truco = -1;
 
 			return i;
 		}
@@ -145,12 +149,14 @@ int8_t terminar_rodada(int8_t vencedor_partida) {
 int8_t terminar_partida() {
 	gestado.rodadas[0] = 0;
 	gestado.rodadas[1] = 0;
-	gestado.mao_de_10 = -1;
-	gestado.valor_partida = 0;
 
 	int8_t i;
 	for (i = 0; i < 2; i++) {
 		if (gestado.pontos[i] >= 12) {
+			gestado.pontos[0] = 0;
+			gestado.pontos[1] = 0;
+			gestado.mao_de_10 = -1;
+			gestado.valor_partida = 0;
 			gestado.jogos[i]++;
 			return i;
 		}
@@ -160,6 +166,9 @@ int8_t terminar_partida() {
 }
 
 int8_t terminar_jogo() {
+	gestado.pontos[0] = 0;
+	gestado.pontos[1] = 0;
+	
 	int8_t i;
 	for (i = 0; i < 2; i++) {
 		if (gestado.jogos[i] > 1) {
@@ -172,21 +181,21 @@ int8_t terminar_jogo() {
 
 void pontuacao_str_atualizar() {
 	snprintf(pontuacao_str, 512,
-		"<b>Partida atual</b>:\n"
-			"%s"
-			"\t%s (%d pontos)\n"
-			"\tEmpate na rodada? %s\n\n"
-		
 		"<b>Jogos-Pontos-Rodadas</b>:\n"
 			"\t<span font_weight='bold' color='%s'>Time 1: %d-%2d-%d</span>\n"
-			"\t<span font_weight='bold' color='%s'>Time 2: %d-%2d-%d</span>\n",
+			"\t<span font_weight='bold' color='%s'>Time 2: %d-%2d-%d</span>\n\n"
 		
-		gestado.empate ? "\t<span font_weight='bold'>Houve empate. Me mostre sua maior carta.</span>\n" : "",
-		valor_partida_str[gestado.valor_partida], valor_partida[gestado.valor_partida],
-		gestado.empate_parcial ? "Sim": "Não",
+		"<b>Partida atual</b>:\n"
+			"\t%s (%d pontos)\n"
+			"\tEmpate na rodada? %s\n"
+			"%s",
 		
 		cores_times[0], gestado.jogos[0], gestado.pontos[0], gestado.rodadas[0],
-		cores_times[1], gestado.jogos[1], gestado.pontos[1], gestado.rodadas[1]
+		cores_times[1], gestado.jogos[1], gestado.pontos[1], gestado.rodadas[1],
+
+		gestado.mao_de_10 != -1 ? "Mão de 10" : valor_partida_str[gestado.valor_partida], valor_partida[gestado.valor_partida],
+		gestado.empate_parcial ? "Sim": "Não",
+		gestado.empate ? "\t<span font_weight='bold'>Houve empate. Me mostre sua maior carta.</span>\n" : ""
 	);
 }
 
