@@ -5,6 +5,10 @@ int criar_socket_cliente() {
 	return criar_socket(INADDR_ANY, PORTA, CONEXAO_MODO_CLIENTE);
 }
 
+void encerrar_programa() {
+	exit(0);
+}
+
 void *t_receive(void *arg) {
 	int retval;
 	Mensagem mensagem;
@@ -14,6 +18,7 @@ void *t_receive(void *arg) {
 	int8_t truco_id;
 	char truco_nome[128];
 
+	pthread_mutex_lock(&mutex_gui);
 	//GUI - Jogo
 	GtkWidget *jogo_nome_label = GTK_WIDGET(gtk_builder_get_object(builder, "jogo_nome_label"));
 	GtkWidget *jogo_estado_label = GTK_WIDGET(gtk_builder_get_object(builder, "jogo_estado_label"));
@@ -26,6 +31,7 @@ void *t_receive(void *arg) {
 	//Extra
 	GtkTextIter iter_end;
 	GtkTextBuffer *textbuffer;
+	pthread_mutex_unlock(&mutex_gui);
 
 	while (1) {
 		#ifdef DEBUG
@@ -34,6 +40,7 @@ void *t_receive(void *arg) {
 
 		retval = mensagem_receber(ssfd, &mensagem);
 
+		pthread_mutex_lock(&mutex_gui);
 		#ifdef DEBUG
 		printf("\033[0;31m"); 
 		mensagem_print(&mensagem, "CHEGOU DO SERVIDOR: ");
@@ -131,6 +138,7 @@ void *t_receive(void *arg) {
 				}
 			}
 		}
+		pthread_mutex_unlock(&mutex_gui);
 	}
 }
 
