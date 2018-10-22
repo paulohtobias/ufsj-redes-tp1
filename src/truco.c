@@ -154,6 +154,10 @@ int8_t terminar_partida() {
 	gestado.rodadas[0] = 0;
 	gestado.rodadas[1] = 0;
 
+	#ifdef DEBUG
+	printf("\nterminar_partida: [%d|%d]\n\n", gestado.pontos[0], gestado.pontos[1]);
+	#endif //DEBUG
+
 	int8_t i;
 	for (i = 0; i < 2; i++) {
 		if (gestado.pontos[i] >= 12) {
@@ -172,6 +176,10 @@ int8_t terminar_partida() {
 int8_t terminar_jogo() {
 	gestado.pontos[0] = 0;
 	gestado.pontos[1] = 0;
+
+	#ifdef DEBUG
+	printf("\nterminar_jogo: [%d|%d]\n\n", gestado.jogos[0], gestado.jogos[1]);
+	#endif //DEBUG
 	
 	int8_t i;
 	for (i = 0; i < 2; i++) {

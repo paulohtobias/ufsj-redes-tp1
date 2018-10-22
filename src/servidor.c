@@ -149,6 +149,25 @@ void *t_leitura(void *args) {
 				}
 			}
 			pthread_mutex_unlock(&mutex_jogo);
+		} else if (mensagem.tipo == SMT_FIM_QUEDA) {
+			pthread_mutex_lock(&mutex_jogo);
+			if (gfase == FJ_FIM_QUEDA && JOGADOR_ESTA_ATIVO(jogador->id)) {
+				uint8_t resposta;
+				mensagem_obter_resposta(&mensagem, &resposta);
+
+				uint8_t indice = JOGADOR_TIME(jogador->id);
+				gresposta[indice] = resposta;
+
+				#ifdef DEBUG
+				printf("(%d) RSP fim jogo : %d\n", jogador->id, resposta);
+				#endif //DEBUG
+
+				//Verifica se ambos responderam e se as respostas são iguais.
+				if (gresposta[!indice] <= RSP_SIM && gresposta[0] == gresposta[1]) {
+					pthread_cond_signal(&cond_jogo);
+				}
+			}
+			pthread_mutex_unlock(&mutex_jogo);
 		} else if (mensagem.tipo == SMT_CHAT) {
 			pthread_mutex_lock(&mutex_broadcast);
 			

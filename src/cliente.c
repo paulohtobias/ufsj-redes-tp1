@@ -199,6 +199,18 @@ void t_send(GtkEntry *entry, gpointer user_data) {
 						msg_valida = 1;
 					}
 				}
+			} else if (mensagem->tipo == SMT_FIM_QUEDA) {
+				uint8_t resposta = atoi(input);
+				if (resposta < RSP_AUMENTO) {
+					#ifdef DEBUG
+					printf("resposta fim queda: %d\n", resposta);
+					#endif //DEBUG
+					
+					if (resposta != RSP_AUMENTO) {
+						mensagem_definir_resposta(mensagem, resposta);
+						msg_valida = 1;
+					}
+				}
 			}
 		}
 	} else {

@@ -46,6 +46,10 @@ int main(int argc, char *argv[]) {
 	
 	//Loop infinito até que os jogadores fechem o jogo.
 	for (queda = 0; ; queda++) {
+
+		#ifdef DEBUG
+		printf("Queda %d\n", queda);
+		#endif //DEBUG
 		
 		//For da queda. Cada iteração é um jogo (melhor de 3).
 		for (jogo = 0; jogo < 3; jogo++) {
@@ -300,22 +304,62 @@ int main(int argc, char *argv[]) {
 			}
 
 			//Verificando se houve vencedor na queda.
+			pthread_mutex_lock(&mutex_jogo);
 			gvencedor_queda = terminar_jogo();
 
 			#if defined DEBUG || LOG
-			printf("Vencedor da queda: %d\n", gvencedor_jogo);
+			printf("Vencedor da queda: %d\n", gvencedor_queda);
 			#endif //DEBUG
 
-			if (gvencedor_queda) {
-				//.
+			if (gvencedor_queda > -1) {
+				#if defined DEBUG || LOG
+				printf("NÃO ERA PRA ENTRAR AQUI PORRA: %d\n", gvencedor_queda);
+				#endif //DEBUG
+
+				//Pergunta aos jogadores se vão querer continuar jogando.
 				pthread_mutex_lock(&mutex_broadcast);
-				mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
+				gfase = FJ_FIM_QUEDA;
+				gresposta[0] = gresposta[1] = RSP_INDEFINIDO;
+				gjogadores_ativos = JA_TODOS;
+				mensagem_fim_queda(&gmensagem, gvencedor_queda);
 				new_msg = MSG_TODOS;
 				enviar_mensagem(&gmensagem, new_msg);
 				pthread_mutex_unlock(&mutex_broadcast);
+				pthread_mutex_unlock(&mutex_jogo);
+
+				pthread_mutex_lock(&mutex_jogo);
+				//Aguarda a resposta.
+				while (gresposta[0] > RSP_SIM || gresposta[0] != gresposta[1]) {
+					#ifdef DEBUG
+					printf("Aguardando o resposta do truco...\n");
+					#endif //DEBU
+					
+					pthread_cond_wait(&cond_jogo, &mutex_jogo);
+				}
+
+				//Repostas foram dadas.
+				if (gresposta[0] == RSP_NAO) {
+					#if defined DEBUG || LOG
+					printf("Fim de queda. Encerrando...\n");
+					#endif //DEBUG
+					
+					pthread_mutex_unlock(&mutex_jogo);
+					break;
+				} else if (gresposta[0] == RSP_SIM) {
+					#if defined DEBUG || LOG
+					printf("Fim de queda. Recomeçando\n");
+					#endif //DEBUG
+
+					pthread_mutex_unlock(&mutex_jogo);
+				}
 			}
+			pthread_mutex_unlock(&mutex_jogo);
 		}
 	}
+
+	#ifdef DEBUG
+	printf("Esperando fim das threads....\n");
+	#endif //DEBUG
 
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		pthread_join(jogadores[i].thread.leitura, NULL);

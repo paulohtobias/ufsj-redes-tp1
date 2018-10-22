@@ -7,12 +7,12 @@ char mensagem_tipo_str[__SMT_QTD][BUFF_SIZE] = {
 	"Estou te enviando suas cartas.",
 	"Seu turno.",
 	"Jogada aceita.",
-	"%s pediu %s. (0:não; 1: sim; 2: aumento)",
+	"%s pediu %s. (0: não; 1: sim; 2: aumento)",
 	"Houve empate. Me mostre sua maior carta.",
 	"Fim da rodada.",
 	"Fim da partida.",
 	"Fim do jogo.",
-	"Fim da queda.",
+	"Fim da queda. Deseja continuar? (0: não; 1: sim)",
 	"Nova mensagem no chat."
 };
 
