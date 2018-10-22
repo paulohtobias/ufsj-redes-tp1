@@ -18,7 +18,7 @@ int criar_socket(in_addr_t endereco, in_port_t porta, int modo) {
 
 	struct sockaddr_in server_addr;
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_addr.s_addr = htonl(endereco);
+	server_addr.sin_addr.s_addr = endereco;
 	server_addr.sin_port = htons(porta);
 
 	if (modo == CONEXAO_MODO_SERVIDOR) {

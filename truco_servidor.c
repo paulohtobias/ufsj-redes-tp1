@@ -4,6 +4,7 @@
 int main(int argc, char *argv[]) {
 	int i, j;
 
+
 	unsigned int semente = 1540161191;
 	if (argc > 1) {
 		semente = (unsigned) atoi(argv[1]);
@@ -157,87 +158,17 @@ int main(int argc, char *argv[]) {
 								printf("%d pediu truco na mao de 10\n", gestado.jogador_atual);
 								#endif //DEBUG
 								
-								gvencedor_partida = !JOGADOR_TIME(gestado.jogador_atual);
+								gvencedor_partida = JOGADOR_TIME_ADV(gestado.jogador_atual);
 								pthread_mutex_unlock(&mutex_jogo);
 								break;
 							}
-
-							//todo: criar uma função avisar_truco(jogador_id) no servidor
-							//Avisa para todos que o jogador pediu truco.
-							pthread_mutex_lock(&mutex_broadcast);
-							mensagem_processando(&gmensagem, "Seu time pediu truco|seis|nove|doze. Aguardando resposta do time adversário.");
-							new_msg = MSG_TIME(gestado.jogador_atual);
-							enviar_mensagem(&gmensagem, new_msg);
-							pthread_mutex_unlock(&mutex_broadcast);							
-							
-							//Avisa ao outro time que o jogador pediu truco e espera pela reposta.
-							pthread_mutex_lock(&mutex_broadcast);
-							gresposta[0] = gresposta[1] = RSP_INDEFINIDO;
-							mensagem_truco(&gmensagem, gestado.jogador_atual);
-							uint8_t time_adversario = MSG_TIME_ADV(gestado.jogador_atual);
-							gjogadores_ativos = time_adversario;
-							enviar_mensagem(&gmensagem, time_adversario);
-							pthread_mutex_unlock(&mutex_broadcast);
 							pthread_mutex_unlock(&mutex_jogo);
-
-
-							pthread_mutex_lock(&mutex_jogo);
-							//Aguarda a jogada.
-							while (gresposta[0] == RSP_INDEFINIDO || gresposta[0] != gresposta[1]) {
-								#ifdef DEBUG
-								printf("Aguardando o resposta do truco...\n");
-								#endif //DEBU
-								
-								pthread_cond_wait(&cond_jogo, &mutex_jogo);
-							}
-							//Repostas foram dadas.
-							if (gresposta[0] == RSP_NAO) {
-								#ifdef DEBUG
-								printf("o time %d correu do truco|seis|nove|doze\n", !gestado.jogador_atual);
-								#endif //DEBUG
-								
-								gvencedor_partida = JOGADOR_TIME(gestado.jogador_atual);
-								pthread_mutex_unlock(&mutex_jogo);
+							
+							RESPOSTAS resposta = avisar_truco(gestado.jogador_atual);
+							if (resposta == RSP_NAO) {
 								break;
-							} else if (gresposta[0] == RSP_SIM) {
-								gestado.valor_partida++;
-
-								//Atualização geral.
-								pthread_mutex_lock(&mutex_broadcast);
-								mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
-								mensagem_definir_textof(&gmensagem, "Truco|Seis|Nove|Doze Aceito.");
-								new_msg = MSG_TODOS;
-								enviar_mensagem(&gmensagem, new_msg);
-								pthread_mutex_unlock(&mutex_broadcast);
-
-								#ifdef DEBUG
-								printf("o time %d aceitou o truco|seis|nove|doze\n", !gestado.jogador_atual);
-								#endif //DEBUG
-
-								pthread_mutex_unlock(&mutex_jogo);
+							} else if (resposta == RSP_SIM) {
 								continue;
-							} else { //Se cair aqui, então a repoosta foi pra aumentar a aposta.
-								//todo: criar uma função avisar_truco(jogador_id) no servidor
-								//Avisa para o time que o jogador pediu truco.
-								pthread_mutex_lock(&mutex_broadcast);
-								mensagem_processando(&gmensagem, "Seu time pediu truco|seis|nove|doze. Aguardando resposta do time adversário.");
-								uint8_t time_adversario = MSG_TIME_ADV(gestado.jogador_atual);
-								gjogadores_ativos = time_adversario;
-								enviar_mensagem(&gmensagem, time_adversario);
-								pthread_mutex_unlock(&mutex_broadcast);							
-								
-								//Avisa ao outro time que o jogador pediu truco e espera pela reposta.
-								pthread_mutex_lock(&mutex_broadcast);
-								gresposta[0] = gresposta[1] = RSP_INDEFINIDO;
-								mensagem_truco(&gmensagem, gestado.jogador_atual);
-								new_msg = MSG_TIME(gestado.jogador_atual);
-								enviar_mensagem(&gmensagem, new_msg);
-								pthread_mutex_unlock(&mutex_broadcast);
-								pthread_mutex_unlock(&mutex_jogo);
-
-								#ifdef DEBUG
-								printf("TO-DO: o time %d aumentou!! truco|seis|nove|doze\n", !gestado.jogador_atual);
-								#endif //DEBUG
 							}
 						} else { //Se cair aqui foi uma jogada normal.
 							//Atualiza a carta mais forte
@@ -356,7 +287,7 @@ int main(int argc, char *argv[]) {
 				//Verificando se houve vencedor na partida.
 				gvencedor_jogo = terminar_partida(gvencedor_partida);
 
-				#ifdef DEBUG
+				#if defined DEBUG || LOG
 				printf("Vencedor do jogo: %d\n", gvencedor_jogo);
 				#endif //DEBUG
 
@@ -366,6 +297,22 @@ int main(int argc, char *argv[]) {
 					break;
 				}
 				pthread_mutex_unlock(&mutex_jogo);
+			}
+
+			//Verificando se houve vencedor na queda.
+			gvencedor_queda = terminar_jogo();
+
+			#if defined DEBUG || LOG
+			printf("Vencedor da queda: %d\n", gvencedor_jogo);
+			#endif //DEBUG
+
+			if (gvencedor_queda) {
+				//.
+				pthread_mutex_lock(&mutex_broadcast);
+				mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
+				new_msg = MSG_TODOS;
+				enviar_mensagem(&gmensagem, new_msg);
+				pthread_mutex_unlock(&mutex_broadcast);
 			}
 		}
 	}

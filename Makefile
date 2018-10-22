@@ -13,7 +13,7 @@ INCLUDE_PATHS := -I$(IDIR)
 #Libraries
 LIBS := gtk+-3.0
 CFLAGS += `pkg-config --cflags $(LIBS)`
-LOADLIBES := `pkg-config --libs $(LIBS)`
+LOADLIBES := -Bstatic `pkg-config --libs $(LIBS)`
 
 #Compilation line
 COMPILE = $(CC) $(CFLAGS) $(INCLUDE_PATHS)

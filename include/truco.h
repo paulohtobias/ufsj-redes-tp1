@@ -102,6 +102,8 @@ uint8_t gresposta[2];
 /* FUNÇÕES */
 #define JOGADOR_TIME(id) (id % 2)
 
+#define JOGADOR_TIME_ADV(id) (!(id % 2))
+
 #define JOGADOR_ESTA_ATIVO(id) ((gjogadores_ativos & JA_JOGADOR(id)) != 0)
 
 void iniciar_rodada();

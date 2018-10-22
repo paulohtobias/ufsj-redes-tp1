@@ -105,7 +105,6 @@ void *t_leitura(void *args) {
 					#ifdef DEBUG
 					printf("%d pediu truco!\n", jogador->id);
 					#endif //DEBUG
-					gestado.time_truco = JOGADOR_TIME(jogador->id);
 					gfase = FJ_PEDIU_TRUCO;
 					pthread_cond_signal(&cond_jogo);
 				} else {
@@ -146,7 +145,6 @@ void *t_leitura(void *args) {
 				//Verifica se ambos responderam e se as respostas são iguais.
 				if (gresposta[!indice] != RSP_INDEFINIDO && gresposta[0] == gresposta[1]) {
 					gjogadores_ativos = JA_JOGADOR(gestado.jogador_atual);
-					//gfase = FJ_TURNO;
 					pthread_cond_signal(&cond_jogo);
 				}
 			}
@@ -180,5 +178,95 @@ void enviar_mensagem(const Mensagem *mensagem, uint8_t new_msg) {
 			//printf("escreveu %d bytes na msg %d praa %d\n", retval, mensagem->tipo, jogadores[i].id);
 			#endif //DEBUG
 		}
+	}
+}
+
+int avisar_truco(int8_t jogador_id) {
+	pthread_mutex_lock(&mutex_jogo);
+	
+	//Avisa para o time que o jogador pediu truco.
+	char texto[BUFF_SIZE];
+	pthread_mutex_lock(&mutex_broadcast);
+	sprintf(texto, "Seu time pediu %s. Aguardando resposta do time adversário.", valor_partida_str[gestado.valor_partida + 1]);
+	mensagem_processando(&gmensagem, texto);
+	new_msg = MSG_TIME(jogador_id);
+	enviar_mensagem(&gmensagem, new_msg);
+	pthread_mutex_unlock(&mutex_broadcast);
+	
+	//Avisa ao outro time que o jogador pediu truco e espera pela reposta.
+	pthread_mutex_lock(&mutex_broadcast);
+	gresposta[0] = gresposta[1] = RSP_INDEFINIDO;
+	mensagem_truco(&gmensagem, jogador_id);
+	uint8_t time_adversario = MSG_TIME_ADV(jogador_id);
+	gjogadores_ativos = time_adversario;
+	enviar_mensagem(&gmensagem, time_adversario);
+	pthread_mutex_unlock(&mutex_broadcast);
+	pthread_mutex_unlock(&mutex_jogo);
+
+
+	pthread_mutex_lock(&mutex_jogo);
+	//Aguarda a jogada.
+	while (gresposta[0] == RSP_INDEFINIDO || gresposta[0] != gresposta[1]) {
+		#ifdef DEBUG
+		printf("Aguardando o resposta do truco...\n");
+		#endif //DEBU
+		
+		pthread_cond_wait(&cond_jogo, &mutex_jogo);
+	}
+	
+	//Repostas foram dadas.
+	if (gresposta[0] == RSP_NAO) {
+		#ifdef DEBUG
+		printf("o time %d correu do truco|seis|nove|doze\n", JOGADOR_TIME_ADV(jogador_id));
+		#endif //DEBUG
+		
+		gvencedor_partida = JOGADOR_TIME(jogador_id);
+		pthread_mutex_unlock(&mutex_jogo);
+		return RSP_NAO;
+	} else if (gresposta[0] == RSP_SIM) {
+		gestado.valor_partida++;
+
+		gestado.time_truco = JOGADOR_TIME(jogador_id);
+
+		//Atualização geral.
+		pthread_mutex_lock(&mutex_broadcast);
+		mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
+		mensagem_definir_textof(&gmensagem, "Truco|Seis|Nove|Doze Aceito.");
+		new_msg = MSG_TODOS;
+		enviar_mensagem(&gmensagem, new_msg);
+		pthread_mutex_unlock(&mutex_broadcast);
+
+		#ifdef DEBUG
+		printf("o time %d aceitou o truco|seis|nove|doze\n", JOGADOR_TIME_ADV(jogador_id));
+		#endif //DEBUG
+
+		pthread_mutex_unlock(&mutex_jogo);
+		return RSP_SIM;
+	} else { //Se cair aqui, então a reposta foi pra aumentar a aposta.
+
+		//Calcula o id que será mostrado aos jogadores do outro time como quem aumentou.
+		//Varia entre o jogador atual e quem está a sua direita (sentido anti-horário).
+		int8_t jogador_id_adv;
+		if (jogador_id == gestado.jogador_atual) {
+			jogador_id_adv = (gestado.jogador_atual + 1) % NUM_JOGADORES;
+		} else {
+			jogador_id_adv = gestado.jogador_atual;
+		}
+
+		#ifdef DEBUG
+		printf("AUMENTOU: (%d, %d)\n", jogador_id, gestado.jogador_atual);
+		printf("o jogador %d aumentou!! truco|seis|nove|doze\n", jogador_id_adv);
+		#endif //DEBUG
+		
+		//Aumenta o valor da partida e avisa a todos os jogadores.
+		gestado.valor_partida++;
+		pthread_mutex_lock(&mutex_broadcast);
+		mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
+		new_msg = MSG_TODOS;
+		enviar_mensagem(&gmensagem, new_msg);
+		pthread_mutex_unlock(&mutex_broadcast);
+
+		pthread_mutex_unlock(&mutex_jogo);
+		return avisar_truco(jogador_id_adv);
 	}
 }

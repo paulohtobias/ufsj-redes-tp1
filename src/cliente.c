@@ -111,7 +111,7 @@ void *t_receive(void *arg) {
 				} else if (mensagem.tipo == SMT_TRUCO) {
 					mensagem_obter_truco_id(&mensagem, &truco_id);
 					sprintf(truco_nome, jogador_nome_fmt, cores_times[truco_id], truco_id);
-					sprintf(texto, mensagem_tipo_str[SMT_TRUCO], truco_nome);
+					sprintf(texto, mensagem_tipo_str[SMT_TRUCO], truco_nome, valor_partida_str[gestado.valor_partida + 1]);
 
 					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), texto);
 				} else {
@@ -190,8 +190,14 @@ void t_send(GtkEntry *entry, gpointer user_data) {
 			} else if (mensagem->tipo == SMT_TRUCO) {
 				uint8_t resposta = atoi(input);
 				if (resposta < RSP_INDEFINIDO) {
-					mensagem_definir_resposta(mensagem, resposta);
-					msg_valida = 1;
+					#ifdef DEBUG
+					printf("resposta truco: %d | valor_partida: %d\n", resposta, gestado.valor_partida);
+					#endif //DEBUG
+					
+					if (resposta != RSP_AUMENTO || gestado.valor_partida + 1 < 4) {
+						mensagem_definir_resposta(mensagem, resposta);
+						msg_valida = 1;
+					}
 				}
 			}
 		}

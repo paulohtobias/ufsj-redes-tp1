@@ -114,6 +114,10 @@ int8_t terminar_rodada(int8_t vencedor_partida) {
 		}
 		if (gestado.rodadas[i] == 2 || i == vencedor_partida) {
 			int valor = valor_partida[gestado.valor_partida];
+
+			#ifdef DEBUG
+			valor = VLR_DOZE;
+			#endif //DEBUG
 			
 			gestado.pontos[i] += valor;
 
@@ -172,6 +176,9 @@ int8_t terminar_jogo() {
 	int8_t i;
 	for (i = 0; i < 2; i++) {
 		if (gestado.jogos[i] > 1) {
+
+			gestado.jogos[0] = 0;
+			gestado.jogos[1] = 0;
 			return i;
 		}
 	}

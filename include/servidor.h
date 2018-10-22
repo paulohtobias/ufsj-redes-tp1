@@ -50,4 +50,6 @@ void *t_leitura(void *args);
 
 void enviar_mensagem(const Mensagem *mensagem, uint8_t new_msg);
 
+int avisar_truco(int8_t jogador_id);
+
 #endif //SERVIDOR_H
