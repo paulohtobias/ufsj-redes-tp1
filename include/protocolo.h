@@ -29,9 +29,7 @@ typedef enum MENSAGEM_TIPO {
 	SMT_JOGADA_ACEITA,
 	SMT_TRUCO,
 	SMT_EMPATE,
-	SMT_FIM_RODADA,
-	SMT_FIM_PARTIDA,
-	SMT_FIM_JOGO,
+	SMT_MAO_DE_10,
 	SMT_FIM_QUEDA,
 	SMT_CHAT,
 	__SMT_QTD
@@ -117,11 +115,7 @@ void mensagem_jogada_aceita(Mensagem *mensagem, const EstadoJogo *estado_jogo, i
 
 void mensagem_empate(Mensagem *mensagem);
 
-void mensagem_fim_rodada(Mensagem *mensagem, uint8_t time_vencedor);
-
-void mensagem_fim_partida(Mensagem *mensagem, uint8_t time_vencedor);
-
-void mensagem_fim_jogo(Mensagem *mensagem, uint8_t time_vencedor);
+void mensagem_mao_de_10(Mensagem *mensagem);
 
 void mensagem_fim_queda(Mensagem *mensagem, uint8_t time_vencedor);
 

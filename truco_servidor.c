@@ -85,6 +85,53 @@ int main(int argc, char *argv[]) {
 					enviar_mensagem(&gmensagem, new_msg);
 					pthread_mutex_unlock(&mutex_broadcast);
 				}
+
+				//Se estiver na mão de 10, é preciso saber se os jogadores vão querer jogar.
+				if (!MAO_DE_FERRO) {
+					for (i = 0; i < 2; i++) {
+						if ((gestado.mao_de_10 == 1 << i) && gestado.pontos[!i] > 0) {
+							gfase = FJ_MAO_DE_10;
+							gjogadores_ativos = i ? JA_TIME2 : JA_TIME1;
+
+							//Avisa o time.
+							pthread_mutex_lock(&mutex_broadcast);
+							gresposta[0] = gresposta[1] = RSP_INDEFINIDO;
+							mensagem_mao_de_10(&gmensagem);
+							new_msg = i ? MSG_TIME2 : MSG_TIME1;
+							enviar_mensagem(&gmensagem, new_msg);
+							pthread_mutex_unlock(&mutex_broadcast);
+							pthread_mutex_unlock(&mutex_jogo);
+
+
+							pthread_mutex_lock(&mutex_jogo);
+							//Aguarda a resposta.
+							while (gresposta[0] > RSP_SIM || gresposta[0] != gresposta[1]) {
+								#ifdef DEBUG
+								printf("Aguardando o resposta mao de 10...\n");
+								#endif //DEBU
+
+								pthread_cond_wait(&cond_jogo, &mutex_jogo);
+							}
+
+							//Repostas foram dadas.
+							if (gresposta[0] == RSP_NAO) {
+								#if defined DEBUG || LOG
+								printf("O time %d correu na mão de 10...\n", i);
+								#endif //DEBUG
+
+								gvencedor_partida = !i;
+
+								pthread_mutex_unlock(&mutex_jogo);
+							} else if (gresposta[0] == RSP_SIM) {
+								#if defined DEBUG || LOG
+								printf("O time %d aceitou na mão de 10...\n", i);
+								#endif //DEBUG
+
+								pthread_mutex_unlock(&mutex_jogo);
+							}
+						}
+					}
+				}
 				pthread_mutex_unlock(&mutex_jogo);
 
 				//Atualiza o estado de todos os jogadores.
@@ -96,7 +143,7 @@ int main(int argc, char *argv[]) {
 
 				//For da partida: cada iteração é uma rodada
 				//iniciar_rodada();
-				for (rodada = 0; rodada < 3; rodada++) {
+				for (rodada = 0; rodada < 3 && gvencedor_partida == -1; rodada++) {
 					pthread_mutex_lock(&mutex_jogo);
 					turno = 0;
 					gestado.empate_parcial = 0;
@@ -157,7 +204,7 @@ int main(int argc, char *argv[]) {
 
 						//Se o jogador pediu truco|seis|nove|doze na sua vez.
 						if (gfase == FJ_PEDIU_TRUCO) {
-							if (gestado.mao_de_10 != -1) {
+							if (gestado.mao_de_10) {
 								#ifdef DEBUG
 								printf("%d pediu truco na mao de 10\n", gestado.jogador_atual);
 								#endif //DEBUG

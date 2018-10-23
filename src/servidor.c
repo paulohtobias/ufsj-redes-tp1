@@ -139,12 +139,31 @@ void *t_leitura(void *args) {
 				gresposta[indice] = resposta;
 
 				#ifdef DEBUG
-				printf("Reposta %d do truco: %d\n", jogador->id, resposta);
+				printf("RSP (%d) truco: %d\n", jogador->id, resposta);
 				#endif //DEBUG
 
 				//Verifica se ambos responderam e se as respostas são iguais.
 				if (gresposta[!indice] != RSP_INDEFINIDO && gresposta[0] == gresposta[1]) {
 					gjogadores_ativos = JA_JOGADOR(gestado.jogador_atual);
+					pthread_cond_signal(&cond_jogo);
+				}
+			}
+			pthread_mutex_unlock(&mutex_jogo);
+		} else if (mensagem.tipo == SMT_MAO_DE_10) {
+			pthread_mutex_lock(&mutex_jogo);
+			if (gfase == FJ_MAO_DE_10 && JOGADOR_ESTA_ATIVO(jogador->id)) {
+				uint8_t resposta;
+				mensagem_obter_resposta(&mensagem, &resposta);
+
+				uint8_t indice = (jogador->id > 1);
+				gresposta[indice] = resposta;
+
+				#ifdef DEBUG
+				printf("RSP (%d) m10: %d\n", jogador->id, resposta);
+				#endif //DEBUG
+
+				//Verifica se ambos responderam e se as respostas são iguais.
+				if (gresposta[!indice] <= RSP_SIM && gresposta[0] == gresposta[1]) {
 					pthread_cond_signal(&cond_jogo);
 				}
 			}

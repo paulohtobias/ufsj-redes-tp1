@@ -9,9 +9,7 @@ char mensagem_tipo_str[__SMT_QTD][BUFF_SIZE] = {
 	"Jogada aceita.",
 	"%s pediu %s. (0: não; 1: sim; 2: aumento)",
 	"Houve empate. Me mostre sua maior carta.",
-	"Fim da rodada.",
-	"Fim da partida.",
-	"Fim do jogo.",
+	"Mão de 10. Você aceita? (0: não; 1: sim)",
 	"Fim da queda. Deseja continuar? (0: não; 1: sim)",
 	"Nova mensagem no chat."
 };
@@ -148,16 +146,8 @@ void mensagem_empate(Mensagem *mensagem) {
 	mensagem_simples(mensagem, SMT_EMPATE);
 }
 
-void mensagem_fim_rodada(Mensagem *mensagem, uint8_t time_vencedor) {
-	mensagem_simples(mensagem, SMT_FIM_RODADA);
-}
-
-void mensagem_fim_partida(Mensagem *mensagem, uint8_t time_vencedor) {
-	mensagem_simples(mensagem, SMT_FIM_PARTIDA);
-}
-
-void mensagem_fim_jogo(Mensagem *mensagem, uint8_t time_vencedor) {
-	mensagem_simples(mensagem, SMT_FIM_JOGO);
+void mensagem_mao_de_10(Mensagem *mensagem) {
+	mensagem_simples(mensagem, SMT_MAO_DE_10);
 }
 
 void mensagem_fim_queda(Mensagem *mensagem, uint8_t time_vencedor) {
