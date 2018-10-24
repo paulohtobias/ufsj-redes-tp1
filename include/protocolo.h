@@ -70,13 +70,13 @@ int mensagem_enviar(const Mensagem *mensagem, int sfd);
 
 size_t mensagem_obter_tamanho(const Mensagem *mensagem);
 
-void mensagem_definir(Mensagem *mensagem, MENSAGEM_TIPO tipo, uint8_t atualizar_estado_jogo, uint8_t atualizar_estado_jogadores, uint8_t tamanho_dados, const EstadoJogo *estado_jogo, const EstadoJogador estado_jogadores[NUM_JOGADORES], const void *dados);
+void mensagem_definir(Mensagem *mensagem, MENSAGEM_TIPO tipo, const EstadoJogo *estado_jogo, const EstadoJogador estado_jogadores[NUM_JOGADORES], const void *dados, uint8_t tamanho_dados);
 
 void mensagem_simples(Mensagem *mensagem, MENSAGEM_TIPO tipo);
 
 void mensagem_atualizar_estado(Mensagem *mensagem, const EstadoJogo *estado_jogo, const EstadoJogador estado_jogadores[NUM_JOGADORES]);
 
-void mensagem_somente_dados(Mensagem *mensagem, MENSAGEM_TIPO tipo, uint8_t tamanho_dados, const void *dados);
+void mensagem_somente_dados(Mensagem *mensagem, MENSAGEM_TIPO tipo, const void *dados, uint8_t tamanho_dados);
 
 
 void mensagem_obter_id(const Mensagem *mensagem, int8_t *id);
@@ -118,7 +118,7 @@ void mensagem_empate(Mensagem *mensagem);
 
 void mensagem_mao_de_10(Mensagem *mensagem);
 
-void mensagem_fim_queda(Mensagem *mensagem, uint8_t time_vencedor);
+void mensagem_fim_queda(Mensagem *mensagem, const EstadoJogo *estado, uint8_t time_vencedor);
 
 void mensagem_chat(Mensagem *mensagem, const char *texto, uint8_t tamanho_texto);
 

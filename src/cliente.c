@@ -23,6 +23,7 @@ void *t_receive(void *arg) {
 	int8_t jogador_atual_id;
 	int8_t truco_id;
 	char truco_nome[128];
+	uint8_t time_vencedor;
 
 	pthread_mutex_lock(&mutex_gui);
 	//GUI - Jogo
@@ -119,6 +120,12 @@ void *t_receive(void *arg) {
 					mensagem_obter_id(&mensagem, &truco_id);
 					sprintf(truco_nome, jogador_nome_fmt, cores_times[truco_id], truco_id);
 					sprintf(texto, mensagem_tipo_str[mensagem.tipo], truco_nome, valor_partida_str[gestado.valor_partida + 1]);
+
+					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), texto);
+				} else if (mensagem.tipo == SMT_FIM_QUEDA) {
+					mensagem_obter_id(&mensagem, &time_vencedor);
+
+					sprintf(texto, mensagem_tipo_str[mensagem.tipo], time_vencedor);
 
 					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), texto);
 				} else {

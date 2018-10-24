@@ -360,7 +360,7 @@ void servidor_mensagem_mao_de_10(uint8_t time) {
 
 void servidor_mensagem_fim_queda() {
 	Mensagem mensagem;
-	mensagem_fim_queda(&mensagem, gvencedor_queda);
+	mensagem_fim_queda(&mensagem, &gestado, gvencedor_queda);
 	enviar_mensagem(&mensagem, MSG_TODOS);
 }
 
