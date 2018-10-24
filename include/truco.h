@@ -63,12 +63,12 @@ typedef struct EstadoJogador {
 	Carta carta_jogada;
 } EstadoJogador;
 
-typedef enum RESPOSTAS {
+typedef enum RESPOSTA {
 	RSP_NAO,
 	RSP_SIM,
 	RSP_AUMENTO,
 	RSP_INDEFINIDO
-} RESPOSTAS;
+} RESPOSTA;
 
 /* VARIÁVEIS GLOBAIS */
 extern char cores_times[NUM_JOGADORES][16];

@@ -225,13 +225,7 @@ int avisar_truco(int8_t jogador_id) {
 
 	pthread_mutex_lock(&mutex_jogo);
 	//Aguarda a jogada.
-	while (gresposta[0] == RSP_INDEFINIDO || gresposta[0] != gresposta[1]) {
-		#ifdef DEBUG
-		printf("Aguardando o resposta do truco...\n");
-		#endif //DEBU
-		
-		pthread_cond_wait(&cond_jogo, &mutex_jogo);
-	}
+	esperar_resposta(RSP_AUMENTO);
 	
 	//Repostas foram dadas.
 	if (gresposta[0] == RSP_NAO) {
@@ -278,6 +272,17 @@ int avisar_truco(int8_t jogador_id) {
 
 		pthread_mutex_unlock(&mutex_jogo);
 		return avisar_truco(jogador_id_adv);
+	}
+}
+
+void esperar_resposta(RESPOSTA resposta_maxima) {
+	//Espera enquanto não houver uma das respostas esperadas e elas não forem iguais.
+	while (gresposta[0] >= resposta_maxima || gresposta[0] != gresposta[1]) {
+		#if defined DEBUG || LOG
+		printf("Aguardando o resposta...\n");
+		#endif //DEBUG
+		
+		pthread_cond_wait(&cond_jogo, &mutex_jogo);
 	}
 }
 

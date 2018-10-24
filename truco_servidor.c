@@ -96,13 +96,7 @@ int main(int argc, char *argv[]) {
 
 							pthread_mutex_lock(&mutex_jogo);
 							//Aguarda a resposta.
-							while (gresposta[0] > RSP_SIM || gresposta[0] != gresposta[1]) {
-								#ifdef DEBUG
-								printf("Aguardando o resposta mao de 10...\n");
-								#endif //DEBU
-
-								pthread_cond_wait(&cond_jogo, &mutex_jogo);
-							}
+							esperar_resposta(RSP_SIM);
 
 							//Repostas foram dadas.
 							if (gresposta[0] == RSP_NAO) {
@@ -322,13 +316,7 @@ int main(int argc, char *argv[]) {
 
 				pthread_mutex_lock(&mutex_jogo);
 				//Aguarda a resposta.
-				while (gresposta[0] > RSP_SIM || gresposta[0] != gresposta[1]) {
-					#if defined DEBUG || LOG
-					printf("Aguardando o resposta do fim de queda...\n");
-					#endif //DEBU
-					
-					pthread_cond_wait(&cond_jogo, &mutex_jogo);
-				}
+				esperar_resposta(RSP_SIM);
 
 				//Repostas foram dadas.
 				if (gresposta[0] == RSP_NAO) {

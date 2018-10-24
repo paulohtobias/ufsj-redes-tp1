@@ -109,7 +109,7 @@ void mensagem_obter_resposta(const Mensagem *mensagem, uint8_t *resposta) {
 	memcpy(resposta, mensagem->dados, sizeof *resposta);
 }
 
-void mensagem_definir_resposta(Mensagem *mensagem, RESPOSTAS resposta) {
+void mensagem_definir_resposta(Mensagem *mensagem, RESPOSTA resposta) {
 	mensagem_somente_dados(mensagem, mensagem->tipo, &resposta, sizeof resposta);
 }
 

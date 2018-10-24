@@ -101,7 +101,7 @@ void mensagem_truco(Mensagem *mensagem, int8_t id);
 
 void mensagem_obter_resposta(const Mensagem *mensagem, uint8_t *resposta);
 
-void mensagem_definir_resposta(Mensagem *mensagem, RESPOSTAS resposta);
+void mensagem_definir_resposta(Mensagem *mensagem, RESPOSTA resposta);
 
 char *mensagem_obter_texto(const Mensagem *mensagem, char *texto);
 

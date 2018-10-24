@@ -43,6 +43,8 @@ int avisar_truco(int8_t jogador_id);
 
 void enviar_mensagem(const Mensagem *mensagem, uint8_t new_msg);
 
+void esperar_resposta(RESPOSTA resposta_maxima);
+
 
 void servidor_mensagem_bem_vindo(int8_t id);
 
