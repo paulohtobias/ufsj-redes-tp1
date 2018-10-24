@@ -277,7 +277,7 @@ int avisar_truco(int8_t jogador_id) {
 
 void esperar_resposta(RESPOSTA resposta_maxima) {
 	//Espera enquanto não houver uma das respostas esperadas e elas não forem iguais.
-	while (gresposta[0] >= resposta_maxima || gresposta[0] != gresposta[1]) {
+	while (gresposta[0] > resposta_maxima || gresposta[0] != gresposta[1]) {
 		#if defined DEBUG || LOG
 		printf("Aguardando o resposta...\n");
 		#endif //DEBUG

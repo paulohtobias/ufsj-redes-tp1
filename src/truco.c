@@ -90,10 +90,16 @@ uint8_t gjogadores_cartas_jogadas[NUM_JOGADORES][NUM_CARTAS_MAO];
 
 /* FUNÇÕES */
 void iniciar_rodada() {
-	gturno = 0;
-	carta_virar(&gestado.carta_mais_forte);
+	int i;
+	
+	gestado.empate_parcial = 0;
 	gestado.jogador_carta_mais_forte = -1;
-	gfase = FJ_TURNO;
+	carta_virar(&gestado.carta_mais_forte);
+	gestado.jogador_atual = gmao;
+	
+	for (i = 0; i < NUM_JOGADORES; i++) {
+		carta_esvaziar(&gestado_jogadores[i].carta_jogada);
+	}
 }
 
 int8_t terminar_rodada(int8_t vencedor_partida) {
@@ -144,6 +150,19 @@ int8_t terminar_rodada(int8_t vencedor_partida) {
 	
 	gestado.jogador_atual = gestado.jogador_carta_mais_forte;
 	return -1;
+}
+
+void iniciar_partida() {
+	gestado.empate = 0;
+	gvencedor_partida = -1;
+	gmao = gjogador_baralho;
+	gjogador_baralho = (gjogador_baralho + 1) % NUM_JOGADORES;
+
+	//Embaralha as cartas.
+	embaralhar(gbaralho, NUM_CARTAS, 10);
+
+	//Muda a fase do jogo.
+	gfase = FJ_ENVIANDO_CARTAS;
 }
 
 int8_t terminar_partida() {

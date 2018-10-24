@@ -112,6 +112,8 @@ void iniciar_rodada();
 
 int8_t terminar_rodada(int8_t vencedor_partida);
 
+void iniciar_partida();
+
 int8_t terminar_partida();
 
 int8_t terminar_jogo();

@@ -22,6 +22,14 @@ int main(int argc, char *argv[]) {
 		jogadores[i].id = -1;
 	}
 	
+	/* todo:
+	 * criar uma thread e deixar esse loop lá.
+	 * bota um cond pra dormir enquanto num_jogadores >= NUM_JOGADORES
+	 * na thread de leitura, quando ler 0 byte, seta o id do jogador pra -1,
+	 * num_jogadores--, cond_signal e retorna.
+	 * o id não vai poder ser i mais. Vai ter que passar pelo vetor jogadores
+	 * pra achar o primeiro com id -1.
+	 */
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		//Faz conexão inicial com o cliente.
 		int jsfd = s_accept(servidor_socket_fd);
@@ -56,17 +64,7 @@ int main(int argc, char *argv[]) {
 			//For do jogo: cada iteração é uma partida (até alguém somar 12+ pontos).
 			for (partida = 0; ; partida++) {
 				pthread_mutex_lock(&mutex_jogo);
-				gestado.empate = 0;
-				gvencedor_partida = -1;
-				int rodadas = 0;
-				gmao = gjogador_baralho;
-				gjogador_baralho = (gjogador_baralho + 1) % NUM_JOGADORES;
-
-				//Embaralha as cartas.
-				embaralhar(gbaralho, NUM_CARTAS, 10);
-				
-				//Muda a fase do jogo.
-				gfase = FJ_ENVIANDO_CARTAS;
+				iniciar_partida();
 				
 				//Distribui as cartas a todos os jogadores.
 				for (i = 0; i < NUM_JOGADORES; i++) {
@@ -84,6 +82,7 @@ int main(int argc, char *argv[]) {
 				//Se estiver na mão de 10, é preciso saber se os jogadores vão querer jogar.
 				if (!MAO_DE_FERRO) {
 					for (i = 0; i < 2; i++) {
+						//Se o time está na mão de 10 e o adversário não tem 0 ponto.
 						if ((gestado.mao_de_10 == 1 << i) && gestado.pontos[!i] > 0) {
 							gfase = FJ_MAO_DE_10;
 							gjogadores_ativos = i ? JA_TIME2 : JA_TIME1;
@@ -119,19 +118,11 @@ int main(int argc, char *argv[]) {
 				servidor_mensagem_atualizar_estado(NULL);
 
 				//For da partida: cada iteração é uma rodada
-				//iniciar_rodada();
 				for (rodada = 0; rodada < 3; rodada++) {
 					if (gvencedor_partida == -1) {
 						pthread_mutex_lock(&mutex_jogo);
 						turno = 0;
-						gestado.empate_parcial = 0;
-						gestado.jogador_carta_mais_forte = -1;
-						carta_virar(&gestado.carta_mais_forte);
-						gestado.jogador_atual = gmao;
-						
-						for (i = 0; i < NUM_JOGADORES; i++) {
-							carta_esvaziar(&gestado_jogadores[i].carta_jogada);
-						}
+						iniciar_rodada();
 
 						//Atualiza o estado de todos os jogadores.
 						servidor_mensagem_atualizar_estado(NULL);
@@ -179,7 +170,7 @@ int main(int argc, char *argv[]) {
 								}
 								pthread_mutex_unlock(&mutex_jogo);
 								
-								RESPOSTAS resposta = avisar_truco(gestado.jogador_atual);
+								RESPOSTA resposta = avisar_truco(gestado.jogador_atual);
 								if (resposta == RSP_NAO) {
 									break;
 								} else if (resposta == RSP_SIM) {
@@ -188,19 +179,20 @@ int main(int argc, char *argv[]) {
 							} else { //Se cair aqui foi uma jogada normal.
 								//Atualiza a carta mais forte
 								Carta *carta_jogada = &gjogadores_cartas[gestado.jogador_atual][gindice_carta];
-								if (carta_jogada->poder > gestado.carta_mais_forte.poder) {
+								if (carta_jogada->poder >= gestado.carta_mais_forte.poder) {
+									//Em caso de empate, verifica se os jogadores não são do mesmo time.
+									if (carta_jogada->poder == gestado.carta_mais_forte.poder) {
+										if (gestado.empate_parcial || JOGADOR_TIME(gestado.jogador_carta_mais_forte) != JOGADOR_TIME(gestado.jogador_atual)) {
+											gestado.empate_parcial = 1;
+										}
+									} else {
+										gestado.empate_parcial = 0;
+									}
+									
+									//Atualiza a carta e o jogador mais forte.
 									gestado.carta_mais_forte = *carta_jogada;
 									gestado.jogador_carta_mais_forte = gestado.jogador_atual;
-									gestado.empate_parcial = 0;
 									gmao = gestado.jogador_atual;
-								} else if (carta_jogada->poder == gestado.carta_mais_forte.poder) {
-									//Em caso de empate, verifica se os jogadores não são do mesmo time.
-									if (JOGADOR_TIME(gestado.jogador_carta_mais_forte) != JOGADOR_TIME(gestado.jogador_atual)) {
-										gestado.carta_mais_forte = *carta_jogada;
-										gestado.jogador_carta_mais_forte = gestado.jogador_atual;
-										gestado.empate_parcial = 1;
-										gmao = gestado.jogador_atual;
-									}
 								}
 
 								carta_esvaziar(carta_jogada);
@@ -254,7 +246,7 @@ int main(int argc, char *argv[]) {
 							gvencedor_partida = gvencedor_primeira_rodada;
 
 							#if defined DEBUG || LOG
-							printf("Emapte na %d rodada. O time %d ganha por ter feito a primeira\n", rodadas, gvencedor_primeira_rodada);
+							printf("Emapte na %d rodada. O time %d ganha por ter feito a primeira\n", rodada, gvencedor_primeira_rodada);
 							#endif //DEBUG
 						} else if (gestado.empate) {
 							gvencedor_partida = JOGADOR_TIME(gestado.jogador_carta_mais_forte);
@@ -324,8 +316,7 @@ int main(int argc, char *argv[]) {
 					printf("Fim de queda. Encerrando...\n");
 					#endif //DEBUG
 					
-					pthread_mutex_unlock(&mutex_jogo);
-					break;
+					exit(0);
 				} else if (gresposta[0] == RSP_SIM) {
 					#if defined DEBUG || LOG
 					printf("Fim de queda. Recomeçando\n");
@@ -337,10 +328,6 @@ int main(int argc, char *argv[]) {
 			pthread_mutex_unlock(&mutex_jogo);
 		}
 	}
-
-	#ifdef DEBUG
-	printf("Esperando fim das threads....\n");
-	#endif //DEBUG
 
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		pthread_join(jogadores[i].thread_leitura, NULL);

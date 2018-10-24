@@ -23,7 +23,7 @@ void *t_receive(void *arg) {
 	int8_t jogador_atual_id;
 	int8_t truco_id;
 	char truco_nome[128];
-	uint8_t time_vencedor;
+	int8_t time_vencedor;
 
 	pthread_mutex_lock(&mutex_gui);
 	//GUI - Jogo
