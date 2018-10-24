@@ -21,15 +21,7 @@ int main(int argc, char *argv[]) {
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		jogadores[i].id = -1;
 	}
-	
-	/* todo:
-	 * criar uma thread e deixar esse loop lá.
-	 * bota um cond pra dormir enquanto num_jogadores >= NUM_JOGADORES
-	 * na thread de leitura, quando ler 0 byte, seta o id do jogador pra -1,
-	 * num_jogadores--, cond_signal e retorna.
-	 * o id não vai poder ser i mais. Vai ter que passar pelo vetor jogadores
-	 * pra achar o primeiro com id -1.
-	 */
+
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		//Faz conexão inicial com o cliente.
 		int jsfd = s_accept(servidor_socket_fd);
@@ -48,21 +40,19 @@ int main(int argc, char *argv[]) {
 		pthread_cond_wait(&cond_init, &mutex_init);
 	}
 	pthread_mutex_unlock(&mutex_init);
-
-	int queda, jogo, partida, rodada, turno;
 	
 	//Loop infinito até que os jogadores fechem o jogo.
-	for (queda = 0; ; queda++) {
+	for (gqueda = 0; ; gqueda++) {
 
 		#ifdef DEBUG
-		printf("Queda %d\n", queda);
+		printf("Queda %d\n", gqueda);
 		#endif //DEBUG
 		
 		//For da queda. Cada iteração é um jogo (melhor de 3).
-		for (jogo = 0; jogo < 3; jogo++) {
+		for (gjogo = 0; gjogo < 3; gjogo++) {
 
 			//For do jogo: cada iteração é uma partida (até alguém somar 12+ pontos).
-			for (partida = 0; ; partida++) {
+			for (gpartida = 0; ; gpartida++) {
 				pthread_mutex_lock(&mutex_jogo);
 				iniciar_partida();
 				
@@ -118,10 +108,10 @@ int main(int argc, char *argv[]) {
 				servidor_mensagem_atualizar_estado(NULL);
 
 				//For da partida: cada iteração é uma rodada
-				for (rodada = 0; rodada < 3; rodada++) {
+				for (grodada = 0; grodada < 3; grodada++) {
 					if (gvencedor_partida == -1) {
 						pthread_mutex_lock(&mutex_jogo);
-						turno = 0;
+						gturno = 0;
 						iniciar_rodada();
 
 						//Atualiza o estado de todos os jogadores.
@@ -203,11 +193,11 @@ int main(int argc, char *argv[]) {
 								//Atualiza o estado de todos os jogadores.
 								servidor_mensagem_atualizar_estado(NULL);
 
-								turno++;
+								gturno++;
 								gestado.jogador_atual = (gestado.jogador_atual + 1) % NUM_JOGADORES;
 
 								//Verifica se todos os jogadores já jogaram (fim da rodada).
-								if (turno == NUM_JOGADORES) {
+								if (gturno == NUM_JOGADORES) {
 									#if defined DEBUG || LOG
 									printf("Fim de turno.\n");
 									#endif //DEBUG
@@ -223,19 +213,19 @@ int main(int argc, char *argv[]) {
 					pthread_mutex_lock(&mutex_jogo);
 					//Verifica se deu empate. Se for na primeira rodada ou se o desempate da segunda
 					//terminar empatado, então os jogadores devem mostrar sua maior carta.
-					if (gvencedor_partida == -1 && gestado.empate_parcial && (rodada == 0 || gestado.empate)) {
+					if (gvencedor_partida == -1 && gestado.empate_parcial && (grodada == 0 || gestado.empate)) {
 						gestado.empate = 1;
 						
 						//Informa que houve empate.
 						servidor_mensagem_empate();
 
 						#if defined DEBUG || LOG
-						printf("Emapte na rodada %d\n", rodada);
+						printf("Emapte na rodada %d\n", grodada);
 						#endif //DEBUG
 					} else {
 						gfase = FJ_FIM_RODADA;
 
-						if (rodada == 0) {
+						if (grodada == 0) {
 							gvencedor_primeira_rodada = JOGADOR_TIME(gestado.jogador_carta_mais_forte);
 
 							#if defined DEBUG || LOG
@@ -246,7 +236,7 @@ int main(int argc, char *argv[]) {
 							gvencedor_partida = gvencedor_primeira_rodada;
 
 							#if defined DEBUG || LOG
-							printf("Emapte na %d rodada. O time %d ganha por ter feito a primeira\n", rodada, gvencedor_primeira_rodada);
+							printf("Emapte na %d rodada. O time %d ganha por ter feito a primeira\n", grodada, gvencedor_primeira_rodada);
 							#endif //DEBUG
 						} else if (gestado.empate) {
 							gvencedor_partida = JOGADOR_TIME(gestado.jogador_carta_mais_forte);

@@ -5,7 +5,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <ctype.h>
-#include <gtk/gtk.h>
+#include "textscroll.h"
 
 /* ENUMS */
 enum {
@@ -31,7 +31,8 @@ int criar_socket_cliente(in_addr_t endereco);
 
 void encerrar_programa();
 
-///Lê o log do chat do servidor e exibe na tela.
+void mostrar_ajuda(GtkMenuItem *menuitem, gpointer user_data);
+
 void *t_receive(void *);
 
 void t_send(GtkEntry *entry, gpointer user_data);

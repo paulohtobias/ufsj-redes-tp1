@@ -33,9 +33,9 @@ int main(int argc, char *argv[]) {
 	gtk_entry_set_max_length(GTK_ENTRY(chat_entry), BUFF_SIZE -1);
 	g_signal_connect(G_OBJECT(chat_entry), "activate", G_CALLBACK(t_send), &gmensagem_chat);
 
-	//todo: apagar o keep_above
-	gtk_window_set_keep_above(GTK_WINDOW(window), 1);
-	gtk_window_present(GTK_WINDOW(window));
+	//GUI - Sobre
+	GtkWidget *sobre_menuitem = GTK_MENU_ITEM(gtk_builder_get_object(builder, "sobre_menuitem"));
+	g_signal_connect(G_OBJECT(sobre_menuitem), "activate", G_CALLBACK(mostrar_ajuda), NULL);
 
 	//Socket
 	ssfd = criar_socket_cliente(endereco);

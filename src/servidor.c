@@ -89,6 +89,11 @@ void *t_leitura(void *args) {
 				//Verifica se o jogador jogou a carta no monte.
 				carta_no_monte = 0;
 				if (gindice_carta < 0) {
+					//Não pode jogar carta no monte na primeira rodada.
+					if (grodada == 0) {
+						pthread_mutex_unlock(&mutex_jogo);
+						continue;
+					}
 					carta_no_monte = 1;
 					gindice_carta *= -1;
 				}

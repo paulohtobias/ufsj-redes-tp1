@@ -80,6 +80,7 @@ char mesa_str[512];
 
 extern Carta gbaralho[NUM_CARTAS];
 extern EstadoJogo gestado;
+uint8_t gqueda, gjogo, gpartida, grodada;
 int8_t gturno;
 int8_t gmao;
 int8_t gjogador_baralho;

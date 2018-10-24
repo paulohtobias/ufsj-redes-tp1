@@ -14,6 +14,12 @@ void encerrar_programa() {
 	exit(0);
 }
 
+void mostrar_ajuda(GtkMenuItem *menuitem, gpointer user_data) {
+	GtkWidget *sobre = GTK_WIDGET(gtk_builder_get_object(builder, "sobre"));
+
+	gtk_dialog_run(GTK_DIALOG(sobre));
+}
+
 void *t_receive(void *arg) {
 	int retval;
 	Mensagem mensagem;
@@ -34,6 +40,7 @@ void *t_receive(void *arg) {
 
 	//GUI - Chat
 	GtkWidget *chat_textview_log = GTK_WIDGET(gtk_builder_get_object(builder, "chat_textview_log"));
+	setup_scroll(GTK_TEXT_VIEW(chat_textview_log), FALSE);
 	
 	//Extra
 	GtkTextIter iter_end;
@@ -75,6 +82,8 @@ void *t_receive(void *arg) {
 				textbuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(chat_textview_log));
 				gtk_text_buffer_get_end_iter(textbuffer, &iter_end);
 				gtk_text_buffer_insert_markup(textbuffer, &iter_end, u8buff, bl);
+
+				scroll_to_bottom(GTK_TEXT_VIEW(chat_textview_log));
 			} else {
 				//Atualiza o tipo da resposta.
 				pthread_mutex_lock(&mutex_mensagem);
