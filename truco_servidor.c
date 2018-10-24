@@ -91,6 +91,7 @@ int main(int argc, char *argv[]) {
 							//Avisa o time.
 							gresposta[0] = gresposta[1] = RSP_INDEFINIDO;
 							servidor_mensagem_mao_de_10(i);
+							pthread_mutex_unlock(&mutex_jogo);
 
 
 							pthread_mutex_lock(&mutex_jogo);
@@ -109,16 +110,12 @@ int main(int argc, char *argv[]) {
 								printf("O time %d correu na mão de 10...\n", i);
 								#endif //DEBUG
 
+								//Marca o time adversário como vencedor e volta a pontuação pra 2 pontos.
 								gvencedor_partida = !i;
-
-								pthread_mutex_unlock(&mutex_jogo);
-							} else if (gresposta[0] == RSP_SIM) {
-								#if defined DEBUG || LOG
-								printf("O time %d aceitou na mão de 10...\n", i);
-								#endif //DEBUG
-
-								pthread_mutex_unlock(&mutex_jogo);
+								gestado.valor_partida = 0;
 							}
+							break;
+							pthread_mutex_unlock(&mutex_jogo);
 						}
 					}
 				}
@@ -129,109 +126,111 @@ int main(int argc, char *argv[]) {
 
 				//For da partida: cada iteração é uma rodada
 				//iniciar_rodada();
-				for (rodada = 0; rodada < 3 && gvencedor_partida == -1; rodada++) {
-					pthread_mutex_lock(&mutex_jogo);
-					turno = 0;
-					gestado.empate_parcial = 0;
-					gestado.jogador_carta_mais_forte = -1;
-					carta_virar(&gestado.carta_mais_forte);
-					gestado.jogador_atual = gmao;
-					
-					for (i = 0; i < NUM_JOGADORES; i++) {
-						carta_esvaziar(&gestado_jogadores[i].carta_jogada);
-					}
-
-					//Atualiza o estado de todos os jogadores.
-					servidor_mensagem_atualizar_estado(NULL);
-					
-					#if defined DEBUG || LOG
-					printf("Inicio do turno. Jogador atual: %d\n", gestado.jogador_atual);
-					#endif //DEBUG
-					
-					pthread_mutex_unlock(&mutex_jogo);
-					//While da rodada: cada iteração é um turno (uma jogada individual de um jogador).
-					while (1) {
+				for (rodada = 0; rodada < 3; rodada++) {
+					if (gvencedor_partida == -1) {
 						pthread_mutex_lock(&mutex_jogo);
-
-						//Marca a fase do jogo como TURNO.
-						gfase = FJ_TURNO;
-
-						//Seta o jogador atual como o único jogador ativo.
-						gjogadores_ativos = JA_JOGADOR(gestado.jogador_atual);
+						turno = 0;
+						gestado.empate_parcial = 0;
+						gestado.jogador_carta_mais_forte = -1;
+						carta_virar(&gestado.carta_mais_forte);
+						gestado.jogador_atual = gmao;
 						
-						//Avisa para o jogador que é sua vez de jogar.
-						servidor_mensagem_seu_turno();
-
-						//Avisa para os outros jogadores quem está jogando.
-						servidor_mensagem_aguardar_turno();
-						pthread_mutex_unlock(&mutex_jogo);
-
-
-						pthread_mutex_lock(&mutex_jogo);
-						//Aguarda a jogada.
-						while (gfase != FJ_FIM_TURNO && gfase != FJ_PEDIU_TRUCO) {
-							pthread_cond_wait(&cond_jogo, &mutex_jogo);
+						for (i = 0; i < NUM_JOGADORES; i++) {
+							carta_esvaziar(&gestado_jogadores[i].carta_jogada);
 						}
-						//Jogada foi feita.
 
-						//Se o jogador pediu truco|seis|nove|doze na sua vez.
-						if (gfase == FJ_PEDIU_TRUCO) {
-							if (gestado.mao_de_10) {
-								#ifdef DEBUG
-								printf("%d pediu truco na mao de 10\n", gestado.jogador_atual);
-								#endif //DEBUG
-								
-								gvencedor_partida = JOGADOR_TIME_ADV(gestado.jogador_atual);
-								pthread_mutex_unlock(&mutex_jogo);
-								break;
-							}
-							pthread_mutex_unlock(&mutex_jogo);
+						//Atualiza o estado de todos os jogadores.
+						servidor_mensagem_atualizar_estado(NULL);
+						
+						#if defined DEBUG || LOG
+						printf("Inicio do turno. Jogador atual: %d\n", gestado.jogador_atual);
+						#endif //DEBUG
+						
+						pthread_mutex_unlock(&mutex_jogo);
+						//While da rodada: cada iteração é um turno (uma jogada individual de um jogador).
+						while (1) {
+							pthread_mutex_lock(&mutex_jogo);
+
+							//Marca a fase do jogo como TURNO.
+							gfase = FJ_TURNO;
+
+							//Seta o jogador atual como o único jogador ativo.
+							gjogadores_ativos = JA_JOGADOR(gestado.jogador_atual);
 							
-							RESPOSTAS resposta = avisar_truco(gestado.jogador_atual);
-							if (resposta == RSP_NAO) {
-								break;
-							} else if (resposta == RSP_SIM) {
-								continue;
+							//Avisa para o jogador que é sua vez de jogar.
+							servidor_mensagem_seu_turno();
+
+							//Avisa para os outros jogadores quem está jogando.
+							servidor_mensagem_aguardar_turno();
+							pthread_mutex_unlock(&mutex_jogo);
+
+
+							pthread_mutex_lock(&mutex_jogo);
+							//Aguarda a jogada.
+							while (gfase != FJ_FIM_TURNO && gfase != FJ_PEDIU_TRUCO) {
+								pthread_cond_wait(&cond_jogo, &mutex_jogo);
 							}
-						} else { //Se cair aqui foi uma jogada normal.
-							//Atualiza a carta mais forte
-							Carta *carta_jogada = &gjogadores_cartas[gestado.jogador_atual][gindice_carta];
-							if (carta_jogada->poder > gestado.carta_mais_forte.poder) {
-								gestado.carta_mais_forte = *carta_jogada;
-								gestado.jogador_carta_mais_forte = gestado.jogador_atual;
-								gestado.empate_parcial = 0;
-								gmao = gestado.jogador_atual;
-							} else if (carta_jogada->poder == gestado.carta_mais_forte.poder) {
-								//Em caso de empate, verifica se os jogadores não são do mesmo time.
-								if (JOGADOR_TIME(gestado.jogador_carta_mais_forte) != JOGADOR_TIME(gestado.jogador_atual)) {
+							//Jogada foi feita.
+
+							//Se o jogador pediu truco|seis|nove|doze na sua vez.
+							if (gfase == FJ_PEDIU_TRUCO) {
+								if (gestado.mao_de_10) {
+									#ifdef DEBUG
+									printf("%d pediu truco na mao de 10\n", gestado.jogador_atual);
+									#endif //DEBUG
+									
+									gvencedor_partida = JOGADOR_TIME_ADV(gestado.jogador_atual);
+									pthread_mutex_unlock(&mutex_jogo);
+									break;
+								}
+								pthread_mutex_unlock(&mutex_jogo);
+								
+								RESPOSTAS resposta = avisar_truco(gestado.jogador_atual);
+								if (resposta == RSP_NAO) {
+									break;
+								} else if (resposta == RSP_SIM) {
+									continue;
+								}
+							} else { //Se cair aqui foi uma jogada normal.
+								//Atualiza a carta mais forte
+								Carta *carta_jogada = &gjogadores_cartas[gestado.jogador_atual][gindice_carta];
+								if (carta_jogada->poder > gestado.carta_mais_forte.poder) {
 									gestado.carta_mais_forte = *carta_jogada;
 									gestado.jogador_carta_mais_forte = gestado.jogador_atual;
-									gestado.empate_parcial = 1;
+									gestado.empate_parcial = 0;
 									gmao = gestado.jogador_atual;
+								} else if (carta_jogada->poder == gestado.carta_mais_forte.poder) {
+									//Em caso de empate, verifica se os jogadores não são do mesmo time.
+									if (JOGADOR_TIME(gestado.jogador_carta_mais_forte) != JOGADOR_TIME(gestado.jogador_atual)) {
+										gestado.carta_mais_forte = *carta_jogada;
+										gestado.jogador_carta_mais_forte = gestado.jogador_atual;
+										gestado.empate_parcial = 1;
+										gmao = gestado.jogador_atual;
+									}
 								}
-							}
 
-							carta_esvaziar(carta_jogada);
+								carta_esvaziar(carta_jogada);
 
-							//Informa ao jogador que sua jogada foi aceita.
-							servidor_mensagem_jogada_aceita();
+								//Informa ao jogador que sua jogada foi aceita.
+								servidor_mensagem_jogada_aceita();
 
-							//Atualiza o estado de todos os jogadores.
-							servidor_mensagem_atualizar_estado(NULL);
+								//Atualiza o estado de todos os jogadores.
+								servidor_mensagem_atualizar_estado(NULL);
 
-							turno++;
-							gestado.jogador_atual = (gestado.jogador_atual + 1) % NUM_JOGADORES;
+								turno++;
+								gestado.jogador_atual = (gestado.jogador_atual + 1) % NUM_JOGADORES;
 
-							//Verifica se todos os jogadores já jogaram (fim da rodada).
-							if (turno == NUM_JOGADORES) {
-								#if defined DEBUG || LOG
-								printf("Fim de turno.\n");
-								#endif //DEBUG
+								//Verifica se todos os jogadores já jogaram (fim da rodada).
+								if (turno == NUM_JOGADORES) {
+									#if defined DEBUG || LOG
+									printf("Fim de turno.\n");
+									#endif //DEBUG
 
+									pthread_mutex_unlock(&mutex_jogo);
+									break;
+								}
 								pthread_mutex_unlock(&mutex_jogo);
-								break;
 							}
-							pthread_mutex_unlock(&mutex_jogo);
 						}
 					}
 

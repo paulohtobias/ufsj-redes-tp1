@@ -187,6 +187,7 @@ void *t_leitura(void *args) {
 }
 
 void enviar_mensagem(const Mensagem *mensagem, uint8_t new_msg) {
+	pthread_mutex_lock(&mutex_broadcast);
 	int i, retval;
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		//Só envia para quem está autorizado a receber.
@@ -205,6 +206,7 @@ void enviar_mensagem(const Mensagem *mensagem, uint8_t new_msg) {
 			#endif //DEBUG
 		}
 	}
+	pthread_mutex_unlock(&mutex_broadcast);
 }
 
 int avisar_truco(int8_t jogador_id) {
@@ -213,7 +215,7 @@ int avisar_truco(int8_t jogador_id) {
 	//Avisa para o time que o jogador pediu truco.
 	char texto[BUFF_SIZE];
 	sprintf(texto, "Seu time pediu %s. Aguardando resposta do time adversário.", valor_partida_str[gestado.valor_partida + 1]);
-	servidor_mensagem_processando(MSG_JOGADOR(jogador_id), texto);
+	servidor_mensagem_processando(MSG_TIME(jogador_id), texto);
 	
 	//Avisa ao outro time que o jogador pediu truco e espera pela reposta.
 	gresposta[0] = gresposta[1] = RSP_INDEFINIDO;
@@ -281,113 +283,89 @@ int avisar_truco(int8_t jogador_id) {
 
 
 void servidor_mensagem_bem_vindo(int8_t id) {
-	pthread_mutex_lock(&mutex_broadcast);
-	mensagem_bem_vindo(&gmensagem, id);
-	new_msg = MSG_JOGADOR(id);
-	enviar_mensagem(&gmensagem, new_msg);
-	pthread_mutex_unlock(&mutex_broadcast);
+	Mensagem mensagem;
+	mensagem_bem_vindo(&mensagem, id);
+	enviar_mensagem(&mensagem, MSG_JOGADOR(id));
 }
 
 void servidor_mensagem_processando(uint8_t remetentes, const char *texto) {
-	pthread_mutex_lock(&mutex_broadcast);
-	mensagem_processando(&gmensagem, texto);
-	new_msg = remetentes;
-	enviar_mensagem(&gmensagem, new_msg);
-	pthread_mutex_unlock(&mutex_broadcast);
+	Mensagem mensagem;
+	mensagem_processando(&mensagem, texto);
+	enviar_mensagem(&mensagem, remetentes);
 }
 
 void servidor_mensagem_atualizar_estado(const char *texto) {
-	pthread_mutex_lock(&mutex_broadcast);
-	mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
+	Mensagem mensagem;
+	mensagem_atualizar_estado(&mensagem, &gestado, gestado_jogadores);
 	if (texto != NULL) {
-		mensagem_definir_textof(&gmensagem, texto);
+		mensagem_definir_textof(&mensagem, texto);
 	}
-	new_msg = MSG_TODOS;
-	enviar_mensagem(&gmensagem, new_msg);
-	pthread_mutex_unlock(&mutex_broadcast);
+	enviar_mensagem(&mensagem, MSG_TODOS);
 }
 
 void servidor_mensagem_enviar_cartas(int8_t id) {
-	pthread_mutex_lock(&mutex_broadcast);
+	Mensagem mensagem;
 	
-	/*todo:
 	Carta cartas[NUM_CARTAS_MAO];
-	memcpy(cartas, gjogadores_cartas[id], sizeof(Carta));
+	memcpy(cartas, gjogadores_cartas[id], sizeof(Carta) * NUM_CARTAS_MAO);
+
+	//Vira as cartas, se estiver na mão de ferro.
 	if (MAO_DE_FERRO) {
 		for (int i = 0; i < NUM_CARTAS_MAO; i++) {
-			cartas_virar(&cartas[i]);
+			carta_virar(&cartas[i]);
 		}
 	}
-	*/
 	
-	mensagem_definir_cartas(&gmensagem, gjogadores_cartas[id]);
-	new_msg = MSG_JOGADOR(jogadores[id].id);
-	enviar_mensagem(&gmensagem, new_msg);
-	pthread_mutex_unlock(&mutex_broadcast);
+	mensagem_definir_cartas(&mensagem, cartas);
+	enviar_mensagem(&mensagem, MSG_JOGADOR(jogadores[id].id));
 }
 
 void servidor_mensagem_seu_turno() {
-	pthread_mutex_lock(&mutex_broadcast);
-	mensagem_seu_turno(&gmensagem);
-	new_msg = MSG_JOGADOR(gestado.jogador_atual);
-	enviar_mensagem(&gmensagem, new_msg);
-	pthread_mutex_unlock(&mutex_broadcast);
+	Mensagem mensagem;
+	mensagem_seu_turno(&mensagem);
+	enviar_mensagem(&mensagem, MSG_JOGADOR(gestado.jogador_atual));
 }
 
 void servidor_mensagem_aguardar_turno() {
-	pthread_mutex_lock(&mutex_broadcast);
-	mensagem_aguardar_turno(&gmensagem, gestado.jogador_atual);
-	new_msg = MSG_TODOS - MSG_JOGADOR(gestado.jogador_atual);
-	enviar_mensagem(&gmensagem, new_msg);
-	pthread_mutex_unlock(&mutex_broadcast);
+	Mensagem mensagem;
+	mensagem_aguardar_turno(&mensagem, gestado.jogador_atual);
+	enviar_mensagem(&mensagem, MSG_TODOS - MSG_JOGADOR(gestado.jogador_atual));
 }
 
 void servidor_mensagem_jogada_aceita() {
-	pthread_mutex_lock(&mutex_broadcast);
-	mensagem_jogada_aceita(&gmensagem, &gestado, gindice_carta);
-	new_msg = MSG_JOGADOR(gestado.jogador_atual);
-	enviar_mensagem(&gmensagem, new_msg);
-	pthread_mutex_unlock(&mutex_broadcast);
+	Mensagem mensagem;
+	mensagem_jogada_aceita(&mensagem, &gestado, gindice_carta);
+	enviar_mensagem(&mensagem, MSG_JOGADOR(gestado.jogador_atual));
 }
 
 void servidor_mensagem_truco(int8_t id) {
-	pthread_mutex_lock(&mutex_broadcast);
-	mensagem_truco(&gmensagem, id);
+	Mensagem mensagem;
+	mensagem_truco(&mensagem, id);
 	uint8_t time_adversario = MSG_TIME_ADV(id);
 	gjogadores_ativos = time_adversario;
-	enviar_mensagem(&gmensagem, time_adversario);
-	pthread_mutex_unlock(&mutex_broadcast);
+	enviar_mensagem(&mensagem, time_adversario);
 }
 
 void servidor_mensagem_empate() {
-	pthread_mutex_lock(&mutex_broadcast);
-	mensagem_empate(&gmensagem);
-	new_msg = MSG_TODOS;
-	enviar_mensagem(&gmensagem, new_msg);
-	pthread_mutex_unlock(&mutex_broadcast);
+	Mensagem mensagem;
+	mensagem_empate(&mensagem);
+	enviar_mensagem(&mensagem, MSG_TODOS);
 }
 
 void servidor_mensagem_mao_de_10(uint8_t time) {
-	pthread_mutex_lock(&mutex_broadcast);
-	mensagem_mao_de_10(&gmensagem);
-	new_msg = time ? MSG_TIME2 : MSG_TIME1;
-	enviar_mensagem(&gmensagem, new_msg);
-	pthread_mutex_unlock(&mutex_broadcast);
-	pthread_mutex_unlock(&mutex_jogo);
+	Mensagem mensagem;
+	mensagem_mao_de_10(&mensagem);
+	enviar_mensagem(&mensagem, time ? MSG_TIME2 : MSG_TIME1);
 }
 
 void servidor_mensagem_fim_queda() {
-	pthread_mutex_lock(&mutex_broadcast);
-	mensagem_fim_queda(&gmensagem, gvencedor_queda);
-	new_msg = MSG_TODOS;
-	enviar_mensagem(&gmensagem, new_msg);
-	pthread_mutex_unlock(&mutex_broadcast);
+	Mensagem mensagem;
+	mensagem_fim_queda(&mensagem, gvencedor_queda);
+	enviar_mensagem(&mensagem, MSG_TODOS);
 }
 
 void servidor_mensagem_chat(const char *texto, uint8_t tamanho_dados) {
-	pthread_mutex_lock(&mutex_broadcast);
-	mensagem_chat(&gmensagem, texto, tamanho_dados);
-	new_msg = MSG_TODOS;
-	enviar_mensagem(&gmensagem, new_msg);
-	pthread_mutex_unlock(&mutex_broadcast);
+	Mensagem mensagem;
+	mensagem_chat(&mensagem, texto, tamanho_dados);
+	enviar_mensagem(&mensagem, MSG_TODOS);
 }

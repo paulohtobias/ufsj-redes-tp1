@@ -204,7 +204,7 @@ void pontuacao_str_atualizar() {
 		cores_times[0], gestado.jogos[0], gestado.pontos[0], gestado.rodadas[0],
 		cores_times[1], gestado.jogos[1], gestado.pontos[1], gestado.rodadas[1],
 
-		gestado.mao_de_10 ? "Mão de 10" : valor_partida_str[gestado.valor_partida], valor_partida[gestado.valor_partida],
+		MAO_DE_FERRO ? "Mão de Ferro" : (gestado.mao_de_10 ? "Mão de 10" : valor_partida_str[gestado.valor_partida]), valor_partida[gestado.valor_partida],
 		gestado.empate_parcial ? "Sim": "Não",
 		gestado.empate ? "\t<span font_weight='bold'>Houve empate. Me mostre sua maior carta.</span>\n" : ""
 	);
@@ -215,7 +215,7 @@ void mesa_str_atualizar(int8_t jogador_id) {
 	char cartas_mao_str[NUM_JOGADORES][40];
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		memset(cartas_mao_str[i], 0, 40);
-		if (i == jogador_id && !MAO_DE_FERRO) {
+		if (i == jogador_id) {
 			sprintf(
 				cartas_mao_str[i],
 				" |%c%s| |%c%s| |%c%s|",
