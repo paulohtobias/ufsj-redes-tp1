@@ -50,12 +50,10 @@ void *t_leitura(void *args) {
 	Mensagem mensagem;
 
 	//Mensagem de boas vindas
-	pthread_mutex_lock(&mutex_broadcast);
-	mensagem_bem_vindo(&gmensagem, jogador->id);
-	new_msg = MSG_JOGADOR(jogador->id);
-	enviar_mensagem(&gmensagem, new_msg);
-	pthread_mutex_unlock(&mutex_broadcast);
+	servidor_mensagem_bem_vindo(jogador->id);
 
+	//Envia um sinal para a thread principal para iniciar o jogo
+	//caso todos os jogadores já tenham entrado.
 	pthread_mutex_lock(&mutex_init);
 	num_jogadores++;
 	if (num_jogadores == NUM_JOGADORES) {
@@ -183,12 +181,7 @@ void *t_leitura(void *args) {
 			}
 			pthread_mutex_unlock(&mutex_jogo);
 		} else if (mensagem.tipo == SMT_CHAT) {
-			pthread_mutex_lock(&mutex_broadcast);
-			
-			mensagem_chat(&gmensagem, mensagem_obter_texto(&mensagem, NULL), mensagem.tamanho_dados);
-			new_msg = MSG_TODOS;
-			enviar_mensagem(&gmensagem, new_msg);
-			pthread_mutex_unlock(&mutex_broadcast);
+			servidor_mensagem_chat(mensagem_obter_texto(&mensagem, NULL), mensagem.tamanho_dados);
 		}
 	}
 }
@@ -219,21 +212,12 @@ int avisar_truco(int8_t jogador_id) {
 	
 	//Avisa para o time que o jogador pediu truco.
 	char texto[BUFF_SIZE];
-	pthread_mutex_lock(&mutex_broadcast);
 	sprintf(texto, "Seu time pediu %s. Aguardando resposta do time adversário.", valor_partida_str[gestado.valor_partida + 1]);
-	mensagem_processando(&gmensagem, texto);
-	new_msg = MSG_TIME(jogador_id);
-	enviar_mensagem(&gmensagem, new_msg);
-	pthread_mutex_unlock(&mutex_broadcast);
+	servidor_mensagem_processando(MSG_JOGADOR(jogador_id), texto);
 	
 	//Avisa ao outro time que o jogador pediu truco e espera pela reposta.
-	pthread_mutex_lock(&mutex_broadcast);
 	gresposta[0] = gresposta[1] = RSP_INDEFINIDO;
-	mensagem_truco(&gmensagem, jogador_id);
-	uint8_t time_adversario = MSG_TIME_ADV(jogador_id);
-	gjogadores_ativos = time_adversario;
-	enviar_mensagem(&gmensagem, time_adversario);
-	pthread_mutex_unlock(&mutex_broadcast);
+	servidor_mensagem_truco(jogador_id);
 	pthread_mutex_unlock(&mutex_jogo);
 
 
@@ -262,12 +246,7 @@ int avisar_truco(int8_t jogador_id) {
 		gestado.time_truco = JOGADOR_TIME(jogador_id);
 
 		//Atualização geral.
-		pthread_mutex_lock(&mutex_broadcast);
-		mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
-		mensagem_definir_textof(&gmensagem, "Truco|Seis|Nove|Doze Aceito.");
-		new_msg = MSG_TODOS;
-		enviar_mensagem(&gmensagem, new_msg);
-		pthread_mutex_unlock(&mutex_broadcast);
+		servidor_mensagem_atualizar_estado("Truco|Seis|Nove|Doze Aceito.");
 
 		#ifdef DEBUG
 		printf("o time %d aceitou o truco|seis|nove|doze\n", JOGADOR_TIME_ADV(jogador_id));
@@ -293,13 +272,122 @@ int avisar_truco(int8_t jogador_id) {
 		
 		//Aumenta o valor da partida e avisa a todos os jogadores.
 		gestado.valor_partida++;
-		pthread_mutex_lock(&mutex_broadcast);
-		mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
-		new_msg = MSG_TODOS;
-		enviar_mensagem(&gmensagem, new_msg);
-		pthread_mutex_unlock(&mutex_broadcast);
+		servidor_mensagem_atualizar_estado(NULL);
 
 		pthread_mutex_unlock(&mutex_jogo);
 		return avisar_truco(jogador_id_adv);
 	}
+}
+
+
+void servidor_mensagem_bem_vindo(int8_t id) {
+	pthread_mutex_lock(&mutex_broadcast);
+	mensagem_bem_vindo(&gmensagem, id);
+	new_msg = MSG_JOGADOR(id);
+	enviar_mensagem(&gmensagem, new_msg);
+	pthread_mutex_unlock(&mutex_broadcast);
+}
+
+void servidor_mensagem_processando(uint8_t remetentes, const char *texto) {
+	pthread_mutex_lock(&mutex_broadcast);
+	mensagem_processando(&gmensagem, texto);
+	new_msg = remetentes;
+	enviar_mensagem(&gmensagem, new_msg);
+	pthread_mutex_unlock(&mutex_broadcast);
+}
+
+void servidor_mensagem_atualizar_estado(const char *texto) {
+	pthread_mutex_lock(&mutex_broadcast);
+	mensagem_atualizar_estado(&gmensagem, &gestado, gestado_jogadores);
+	if (texto != NULL) {
+		mensagem_definir_textof(&gmensagem, texto);
+	}
+	new_msg = MSG_TODOS;
+	enviar_mensagem(&gmensagem, new_msg);
+	pthread_mutex_unlock(&mutex_broadcast);
+}
+
+void servidor_mensagem_enviar_cartas(int8_t id) {
+	pthread_mutex_lock(&mutex_broadcast);
+	
+	/*todo:
+	Carta cartas[NUM_CARTAS_MAO];
+	memcpy(cartas, gjogadores_cartas[id], sizeof(Carta));
+	if (MAO_DE_FERRO) {
+		for (int i = 0; i < NUM_CARTAS_MAO; i++) {
+			cartas_virar(&cartas[i]);
+		}
+	}
+	*/
+	
+	mensagem_definir_cartas(&gmensagem, gjogadores_cartas[id]);
+	new_msg = MSG_JOGADOR(jogadores[id].id);
+	enviar_mensagem(&gmensagem, new_msg);
+	pthread_mutex_unlock(&mutex_broadcast);
+}
+
+void servidor_mensagem_seu_turno() {
+	pthread_mutex_lock(&mutex_broadcast);
+	mensagem_seu_turno(&gmensagem);
+	new_msg = MSG_JOGADOR(gestado.jogador_atual);
+	enviar_mensagem(&gmensagem, new_msg);
+	pthread_mutex_unlock(&mutex_broadcast);
+}
+
+void servidor_mensagem_aguardar_turno() {
+	pthread_mutex_lock(&mutex_broadcast);
+	mensagem_aguardar_turno(&gmensagem, gestado.jogador_atual);
+	new_msg = MSG_TODOS - MSG_JOGADOR(gestado.jogador_atual);
+	enviar_mensagem(&gmensagem, new_msg);
+	pthread_mutex_unlock(&mutex_broadcast);
+}
+
+void servidor_mensagem_jogada_aceita() {
+	pthread_mutex_lock(&mutex_broadcast);
+	mensagem_jogada_aceita(&gmensagem, &gestado, gindice_carta);
+	new_msg = MSG_JOGADOR(gestado.jogador_atual);
+	enviar_mensagem(&gmensagem, new_msg);
+	pthread_mutex_unlock(&mutex_broadcast);
+}
+
+void servidor_mensagem_truco(int8_t id) {
+	pthread_mutex_lock(&mutex_broadcast);
+	mensagem_truco(&gmensagem, id);
+	uint8_t time_adversario = MSG_TIME_ADV(id);
+	gjogadores_ativos = time_adversario;
+	enviar_mensagem(&gmensagem, time_adversario);
+	pthread_mutex_unlock(&mutex_broadcast);
+}
+
+void servidor_mensagem_empate() {
+	pthread_mutex_lock(&mutex_broadcast);
+	mensagem_empate(&gmensagem);
+	new_msg = MSG_TODOS;
+	enviar_mensagem(&gmensagem, new_msg);
+	pthread_mutex_unlock(&mutex_broadcast);
+}
+
+void servidor_mensagem_mao_de_10(uint8_t time) {
+	pthread_mutex_lock(&mutex_broadcast);
+	mensagem_mao_de_10(&gmensagem);
+	new_msg = time ? MSG_TIME2 : MSG_TIME1;
+	enviar_mensagem(&gmensagem, new_msg);
+	pthread_mutex_unlock(&mutex_broadcast);
+	pthread_mutex_unlock(&mutex_jogo);
+}
+
+void servidor_mensagem_fim_queda() {
+	pthread_mutex_lock(&mutex_broadcast);
+	mensagem_fim_queda(&gmensagem, gvencedor_queda);
+	new_msg = MSG_TODOS;
+	enviar_mensagem(&gmensagem, new_msg);
+	pthread_mutex_unlock(&mutex_broadcast);
+}
+
+void servidor_mensagem_chat(const char *texto, uint8_t tamanho_dados) {
+	pthread_mutex_lock(&mutex_broadcast);
+	mensagem_chat(&gmensagem, texto, tamanho_dados);
+	new_msg = MSG_TODOS;
+	enviar_mensagem(&gmensagem, new_msg);
+	pthread_mutex_unlock(&mutex_broadcast);
 }

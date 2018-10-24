@@ -44,24 +44,28 @@ int avisar_truco(int8_t jogador_id);
 void enviar_mensagem(const Mensagem *mensagem, uint8_t new_msg);
 
 
-void servidor_mensagem_atualizar_estado();
-
 void servidor_mensagem_bem_vindo(int8_t id);
 
-void servidor_mensagem_chat(const char *texto, uint8_t tamanho_dados);
+void servidor_mensagem_processando(uint8_t remetentes, const char *texto);
 
-void servidor_mensagem_definir_cartas(int8_t id);
+void servidor_mensagem_atualizar_estado(const char *texto);
 
-void servidor_mensagem_empate();
+void servidor_mensagem_enviar_cartas(int8_t id);
 
-void servidor_mensagem_fim_queda();
+void servidor_mensagem_seu_turno();
+
+void servidor_mensagem_aguardar_turno();
 
 void servidor_mensagem_jogada_aceita();
 
-void servidor_mensagem_mao_de_10();
+void servidor_mensagem_truco(int8_t id);
 
-void servidor_mensagem_processando(const char *texto);
+void servidor_mensagem_empate();
 
-void servidor_mensagem_seu_turno();
+void servidor_mensagem_mao_de_10(uint8_t time);
+
+void servidor_mensagem_fim_queda();
+
+void servidor_mensagem_chat(const char *texto, uint8_t tamanho_dados);
 
 #endif //SERVIDOR_H

@@ -132,7 +132,11 @@ void mensagem_definir_textof(Mensagem *mensagem, const char *format, ...) {
 
 
 void mensagem_processando(Mensagem *mensagem, const char *texto) {
-	mensagem_somente_dados(mensagem, SMT_PROCESSANDO, strlen(texto) + 1, texto);
+	uint8_t tamanho_texto = 0;
+	if (texto != NULL) {
+		tamanho_texto = strlen(texto) + 1;
+	}
+	mensagem_somente_dados(mensagem, SMT_PROCESSANDO, tamanho_texto, texto);
 }
 
 void mensagem_seu_turno(Mensagem *mensagem) {
