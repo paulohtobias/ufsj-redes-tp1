@@ -4,20 +4,11 @@
 #include "conexao.h"
 
 /* TIPOS */
-typedef struct ThreadJogador {
-	pthread_t leitura;
-	pthread_t escrita;
-
-	pthread_mutex_t new_msg_mutex;
-	pthread_cond_t new_msg_cond;
-	uint8_t new_msg;
-} ThreadJogador;
-
 typedef struct Jogador {
 	int8_t id;			// [0-4]
 	int socket_fd;
 
-	ThreadJogador thread;
+	pthread_t thread_leitura;
 } Jogador;
 
 
@@ -48,8 +39,29 @@ void jogador_init(Jogador *jogador, uint8_t id, int sfd);
 
 void *t_leitura(void *args);
 
+int avisar_truco(int8_t jogador_id);
+
 void enviar_mensagem(const Mensagem *mensagem, uint8_t new_msg);
 
-int avisar_truco(int8_t jogador_id);
+
+void servidor_mensagem_atualizar_estado();
+
+void servidor_mensagem_bem_vindo(int8_t id);
+
+void servidor_mensagem_chat(const char *texto, uint8_t tamanho_dados);
+
+void servidor_mensagem_definir_cartas(int8_t id);
+
+void servidor_mensagem_empate();
+
+void servidor_mensagem_fim_queda();
+
+void servidor_mensagem_jogada_aceita();
+
+void servidor_mensagem_mao_de_10();
+
+void servidor_mensagem_processando(const char *texto);
+
+void servidor_mensagem_seu_turno();
 
 #endif //SERVIDOR_H

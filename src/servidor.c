@@ -40,12 +40,7 @@ void jogador_init(Jogador *jogador, uint8_t id, int sfd) {
 	gestado_jogadores[jogador->id].qtd_cartas_mao = 0;
 	carta_virar(&gestado_jogadores[jogador->id].carta_jogada);
 
-	jogador->thread.new_msg = 0;
-	pthread_mutex_init(&jogador->thread.new_msg_mutex, NULL);
-	pthread_cond_init(&jogador->thread.new_msg_cond, NULL);
-
-	pthread_create(&jogador->thread.leitura, NULL, t_leitura, jogador);
-	//pthread_create(&jogador->thread.escrita, NULL, t_escrita, jogador);
+	pthread_create(&jogador->thread_leitura, NULL, t_leitura, jogador);
 }
 
 void *t_leitura(void *args) {

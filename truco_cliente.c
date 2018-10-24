@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
 	//GUI - Builder
 	gtk_init(&argc, &argv);
 	builder = gtk_builder_new_from_file("gui.glade");
-	
+
 	//GUI - Janela
 	GtkWidget *window = GTK_WIDGET(gtk_builder_get_object(builder, "window"));
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(encerrar_programa), NULL);

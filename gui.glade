@@ -76,20 +76,6 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="ypad">10</property>
-                <property name="label" translatable="yes">Jogador 1: |--| |--|
-	Na mesa: |4♠|
-
-Jogador 2: |--| |--|
-	Na mesa: |3♣|
-
-Jogador 3: |4♠| |3♣| |K♠|
-	Na mesa: |--|
-
-Jogador 4: |4♠| |3♣| |K♠|
-	Na mesa: |--|
-
-------------------------------------------------
-Carta mais alta: 3♣ (Jogador 2)</property>
               </object>
               <packing>
                 <property name="expand">True</property>

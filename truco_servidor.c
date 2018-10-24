@@ -4,7 +4,6 @@
 int main(int argc, char *argv[]) {
 	int i, j;
 
-
 	unsigned int semente = 1540161191;
 	if (argc > 1) {
 		semente = (unsigned) atoi(argv[1]);
@@ -17,7 +16,7 @@ int main(int argc, char *argv[]) {
 	printf("SEMENTE: %d\n", semente);
 	#endif //DEBUG
 
-	int chat_socket_fd = criar_socket_servidor();
+	int servidor_socket_fd = criar_socket_servidor();
 
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		jogadores[i].id = -1;
@@ -25,7 +24,7 @@ int main(int argc, char *argv[]) {
 	
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		//Faz conexão inicial com o cliente.
-		int jsfd = s_accept(chat_socket_fd);
+		int jsfd = s_accept(servidor_socket_fd);
 
 		jogador_init(jogadores + i, i, jsfd);
 	}
@@ -187,8 +186,7 @@ int main(int argc, char *argv[]) {
 
 						//Avisa para os outros jogadores quem está jogando.
 						pthread_mutex_lock(&mutex_broadcast);
-						mensagem_processando(&gmensagem, "");
-						mensagem_definir_textof(&gmensagem, "Aguardando a jogada do Jogador %d", gestado.jogador_atual);
+						mensagem_aguardar_turno(&gmensagem, gestado.jogador_atual);
 						new_msg = MSG_TODOS - MSG_JOGADOR(gestado.jogador_atual);
 						enviar_mensagem(&gmensagem, new_msg);
 						pthread_mutex_unlock(&mutex_broadcast);
@@ -409,7 +407,7 @@ int main(int argc, char *argv[]) {
 	#endif //DEBUG
 
 	for (i = 0; i < NUM_JOGADORES; i++) {
-		pthread_join(jogadores[i].thread.leitura, NULL);
+		pthread_join(jogadores[i].thread_leitura, NULL);
 	}
 	pthread_join(thread_escrita, NULL);
 

@@ -20,6 +20,7 @@ void *t_receive(void *arg) {
 	char texto[512];
 
 	//Jogo
+	int8_t jogador_atual_id;
 	int8_t truco_id;
 	char truco_nome[128];
 
@@ -101,7 +102,13 @@ void *t_receive(void *arg) {
 					gtk_label_set_markup(GTK_LABEL(jogo_nome_label), texto);
 
 					//Exibindo a mensagem de boas vindas.
-					sprintf(texto, mensagem_tipo_str[SMT_BEM_VINDO], jogador_nome);
+					sprintf(texto, mensagem_tipo_str[mensagem.tipo], jogador_nome);
+					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), texto);
+				} else if (mensagem.tipo == SMT_AGUARDANDO_TURNO) {
+					mensagem_obter_id(&mensagem, &jogador_atual_id);
+
+					sprintf(texto, mensagem_tipo_str[mensagem.tipo], jogador_atual_id);
+
 					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), texto);
 				} else if (mensagem.tipo == SMT_JOGADA_ACEITA) {
 					mensagem_obter_carta(&mensagem, &gindice_carta);
@@ -109,9 +116,9 @@ void *t_receive(void *arg) {
 					gjogadores_cartas_jogadas[jogador_id][gindice_carta] = 1;
 					carta_esvaziar(&gjogadores_cartas[jogador_id][gindice_carta]);
 				} else if (mensagem.tipo == SMT_TRUCO) {
-					mensagem_obter_truco_id(&mensagem, &truco_id);
+					mensagem_obter_id(&mensagem, &truco_id);
 					sprintf(truco_nome, jogador_nome_fmt, cores_times[truco_id], truco_id);
-					sprintf(texto, mensagem_tipo_str[SMT_TRUCO], truco_nome, valor_partida_str[gestado.valor_partida + 1]);
+					sprintf(texto, mensagem_tipo_str[mensagem.tipo], truco_nome, valor_partida_str[gestado.valor_partida + 1]);
 
 					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), texto);
 				} else {

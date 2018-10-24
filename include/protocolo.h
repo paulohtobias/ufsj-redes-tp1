@@ -26,6 +26,7 @@ typedef enum MENSAGEM_TIPO {
 	SMT_PROCESSANDO,
 	SMT_ENVIANDO_CARTAS,
 	SMT_SEU_TURNO,
+	SMT_AGUARDANDO_TURNO,
 	SMT_JOGADA_ACEITA,
 	SMT_TRUCO,
 	SMT_EMPATE,
@@ -94,7 +95,7 @@ void mensagem_obter_carta(const Mensagem *mensagem, int8_t *indice_carta);
 
 void mensagem_definir_carta(Mensagem *mensagem, int8_t indice_carta);
 
-void mensagem_obter_truco_id(const Mensagem *mensagem, int8_t *id);
+void mensagem_aguardar_turno(Mensagem *mensagem, int8_t id);
 
 void mensagem_truco(Mensagem *mensagem, int8_t id);
 

@@ -6,6 +6,7 @@ char mensagem_tipo_str[__SMT_QTD][BUFF_SIZE] = {
 	"Processando.",
 	"Estou te enviando suas cartas.",
 	"Seu turno.",
+	"Aguardando a jogada do Jogador %d",
 	"Jogada aceita.",
 	"%s pediu %s. (0: não; 1: sim; 2: aumento)",
 	"Houve empate. Me mostre sua maior carta.",
@@ -96,8 +97,8 @@ void mensagem_definir_carta(Mensagem *mensagem, int8_t indice_carta) {
 	mensagem_somente_dados(mensagem, mensagem->tipo, sizeof indice_carta, &indice_carta);
 }
 
-void mensagem_obter_truco_id(const Mensagem *mensagem, int8_t *id) {
-	memcpy(id, mensagem->dados, sizeof *id);
+void mensagem_aguardar_turno(Mensagem *mensagem, int8_t id) {
+	mensagem_somente_dados(mensagem, SMT_AGUARDANDO_TURNO, sizeof id, &id);
 }
 
 void mensagem_truco(Mensagem *mensagem, int8_t id) {
