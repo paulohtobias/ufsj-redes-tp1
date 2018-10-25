@@ -1,7 +1,9 @@
 #include "baralho.h"
 
+int glog = 0;
+
 char naipe_str[__NAIPE_QTD][10] = {
-	"X",
+	" ",
 	"-",
 	"♠",
 	"♣",
@@ -11,7 +13,7 @@ char naipe_str[__NAIPE_QTD][10] = {
 };
 
 void carta_esvaziar(Carta *carta) {
-	carta->numero = 'X';
+	carta->numero = ' ';
 	carta->naipe = NAIPE_VAZIO;
 	carta->poder = 0;
 	carta->visivel = 0;

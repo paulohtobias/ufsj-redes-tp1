@@ -1,11 +1,11 @@
 #include "cliente.h"
 
 int criar_socket_cliente(in_addr_t endereco) {
-	#if defined DEBUG || LOG
-	char sip[21];
-	inet_ntop(AF_INET, &endereco, sip, 20);
-	printf("Conectando ao ip %s\n", sip);
-	#endif //DEBUG
+	if (glog) {
+		char sip[21];
+		inet_ntop(AF_INET, &endereco, sip, 20);
+		printf("\033[0;31m[LOG] Conectando ao ip %s\n", sip);
+	}
 	
 	return criar_socket(endereco, PORTA, CONEXAO_MODO_CLIENTE);
 }
@@ -48,28 +48,20 @@ void *t_receive(void *arg) {
 	pthread_mutex_unlock(&mutex_gui);
 
 	while (1) {
-		#ifdef DEBUG
-		printf("[jogador %d] read\n", jogador_id);
-		#endif //DEBUG
+		if (glog) {
+			printf("\033[0;31m[LOG] Esperando mensagem do servidor\n");
+		}
 
 		retval = mensagem_receber(ssfd, &mensagem);
-
-		pthread_mutex_lock(&mutex_gui);
-		#ifdef DEBUG
-		printf("\033[0;31m"); 
-		mensagem_print(&mensagem, "CHEGOU DO SERVIDOR: ");
-		printf("\033[0m");
-		#endif
 
 		if (retval == -1) {
 			handle_error(1, "thread_leitura-read");
 		} else if (retval == 0) {
-			printf("O servidor encerrou a conexão.\n");
+			printf("\033[0;31m[LOG] O servidor encerrou a conexão.\n");
 			exit(0);
 		}
 
 		if (retval > 0) {
-
 			if (mensagem.tipo == SMT_ERRO) {
 				uint32_t nerr;
 				memcpy(&nerr, mensagem.dados, sizeof nerr);
@@ -92,20 +84,15 @@ void *t_receive(void *arg) {
 				
 				if (mensagem.tipo == SMT_PROCESSANDO) {
 					mensagem_obter_texto(&mensagem, texto);
-
-					#ifdef DEBUG
-					printf("PROCESSANDO MSG: '%s'\n", texto);
-					#endif //DEBUG
-
 					gtk_label_set_markup(GTK_LABEL(jogo_mensagem_servidor_label), texto);
 				} else if (mensagem.tipo == SMT_BEM_VINDO) {
 					//Pegando o id e setando o nome.
 					mensagem_obter_id(&mensagem, &jogador_id);
 					sprintf(jogador_nome, jogador_nome_fmt, cores_times[jogador_id], jogador_id);
 
-					#ifdef DEBUG
-					printf("---= id: %d # Nome: %s =---\n", jogador_id, jogador_nome);
-					#endif //DEBUG
+					if (glog) {
+						printf("\033[0;31m[LOG] Id: %d | Nome: %s\n", jogador_id, jogador_nome);
+					}
 					
 					//Setando a barra de nome.
 					sprintf(texto, "Você: %s", jogador_nome);
@@ -145,7 +132,6 @@ void *t_receive(void *arg) {
 						memset(gjogadores_cartas_jogadas[jogador_id], 0, NUM_CARTAS_MAO * sizeof gjogadores_cartas_jogadas[jogador_id][0]);
 						mesa_str_atualizar(jogador_id);
 						gtk_label_set_text(GTK_LABEL(jogo_mesa_label), mesa_str);
-						printf("[C: ATUALIZANDO A MESA]\n%s\n", mesa_str);
 					}
 				}
 
@@ -159,10 +145,26 @@ void *t_receive(void *arg) {
 					mensagem_obter_estado_jogadores(&mensagem, gestado_jogadores);
 					mesa_str_atualizar(jogador_id);
 					gtk_label_set_text(GTK_LABEL(jogo_mesa_label), mesa_str);
+				}
 
-					#ifdef DEBUG
-					printf("[E: ATUALIZANDO A MESA]\n%s\n", mesa_str);
-					#endif //DEBUG
+				if (glog) {
+					puts("\033[0m#################### [JOGO] ####################");
+					
+					//Título
+					printf("\t\t\tTruco\n");
+					//Nome
+					printf("\t\t\tJogador %d\n\n", jogador_id);
+
+					//Pontuação e Estado
+					puts(pontuacao_str);
+
+					//Mesa
+					puts(mesa_str);
+
+					//Mensagem do Servidor
+					puts(gtk_label_get_text(GTK_LABEL(jogo_mensagem_servidor_label)));
+
+					puts("#################### [JOGO] ####################");
 				}
 			}
 		}
@@ -183,9 +185,9 @@ void t_send(GtkEntry *entry, gpointer user_data) {
 		return;
 	}
 
-	#ifdef DEBUG
-	printf("Input (%d): '%s'\n", tamanho_input, input);
-	#endif //DEBUG
+	if (glog) {
+		printf("\033[0;31m[LOG] Input: %s\n", input);
+	}
 
 	uint8_t msg_valida = 0;
 
@@ -193,10 +195,6 @@ void t_send(GtkEntry *entry, gpointer user_data) {
 		if (tamanho_input <= 2) {
 			if (mensagem->tipo == SMT_SEU_TURNO) {
 				int8_t indice_carta = atoi(input);
-
-				#ifdef DEBUG
-				printf("indice carta: %d\n", indice_carta);
-				#endif //DEBUG
 
 				/*
 				 * As cartas são numeradas de 1 a 3. Se o índice for 0, então o jogador pediu truco.
@@ -213,10 +211,6 @@ void t_send(GtkEntry *entry, gpointer user_data) {
 			} else if (mensagem->tipo == SMT_TRUCO) {
 				uint8_t resposta = atoi(input);
 				if (resposta < RSP_INDEFINIDO) {
-					#ifdef DEBUG
-					printf("resposta truco: %d | valor_partida: %d\n", resposta, gestado.valor_partida);
-					#endif //DEBUG
-					
 					if (resposta != RSP_AUMENTO || gestado.valor_partida + 1 < 4) {
 						mensagem_definir_resposta(mensagem, resposta);
 						msg_valida = 1;
@@ -225,20 +219,12 @@ void t_send(GtkEntry *entry, gpointer user_data) {
 			} else if (mensagem->tipo == SMT_MAO_DE_10) {
 				uint8_t resposta = atoi(input);
 				if (resposta < RSP_AUMENTO) {
-					#ifdef DEBUG
-					printf("resposta mao de 10: %d\n", resposta);
-					#endif //DEBUG
-
 					mensagem_definir_resposta(mensagem, resposta);
 					msg_valida = 1;
 				}
 			} else if (mensagem->tipo == SMT_FIM_QUEDA) {
 				uint8_t resposta = atoi(input);
 				if (resposta < RSP_AUMENTO) {
-					#ifdef DEBUG
-					printf("resposta fim queda: %d\n", resposta);
-					#endif //DEBUG
-					
 					mensagem_definir_resposta(mensagem, resposta);
 					msg_valida = 1;
 				}
@@ -248,27 +234,18 @@ void t_send(GtkEntry *entry, gpointer user_data) {
 		mensagem_chat(mensagem,NULL, 0);
 		mensagem_definir_textof(mensagem, "%s: %s\n", jogador_nome, input);
 		msg_valida = 1;
-
-		#ifdef DEBUG
-		mensagem_print(mensagem, "Mensagem do chat");
-		printf("Tamanho da mensagem do chat: %lu\n", mensagem_obter_tamanho(mensagem));
-		#endif //DEBUG
 	}
 
 	if (!msg_valida) {
-		#ifdef DEBUG
-		printf("Entrada inválida\n");
-		#endif //DEBUG
+		if (glog) {
+			printf("\033[0m[JOGO] Entrada inválida\n");
+		}
 		pthread_mutex_unlock(&mutex_mensagem);
 		return;
 	}
 
 	int retval = write(ssfd, mensagem, mensagem_obter_tamanho(mensagem));
-	
-	#ifdef DEBUG
-	printf("escreveu %d bytes da msg %d\n", retval, mensagem->tipo);
-	#endif //DEBUG
-	
+
 	pthread_mutex_unlock(&mutex_mensagem);
 	if (retval == -1) {
 		handle_error(1, "thread_escrita-write");

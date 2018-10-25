@@ -13,10 +13,8 @@ typedef struct Jogador {
 
 
 /* VARIÁVEIS GLOBAIS*/
-Mensagem gmensagem;
 Jogador jogadores[NUM_JOGADORES];
 
-pthread_t thread_escrita;
 extern pthread_mutex_t mutex_jogo;
 extern pthread_cond_t cond_jogo;
 

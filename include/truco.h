@@ -22,6 +22,7 @@ typedef enum FASE_JOGO {
 	FJ_FIM_QUEDA
 } FASE_JOGO;
 
+///Bitmask informando quais jogadores podem enviar mensagem.
 typedef enum JOGADORES_ATIVOS {
 	JA_NINGUEM = 0,
 	JA_TIME1 = 5,
@@ -46,13 +47,14 @@ typedef struct EstadoJogo {
 	uint8_t pontos[2];   // [0, 12]
 	uint8_t jogos[2];    // 0 ou 1
 
-	int8_t jogador_atual;
+	int8_t jogador_atual; //todo: remover
 	
 	uint8_t empate_parcial;  // Se houve empate na rodada até o momento.
 	uint8_t empate;          // Se a primeira rodada terminou em empate.
-	int8_t time_truco;       // id do último time que pediu truco. -1 se ninguém pediu ainda.
-	uint8_t mao_de_10;        // Bitmask. O bit correspondente ao id do time indica se está na mão de 10.
-	uint8_t valor_partida;   // índice no vetor global que indica quanto vale a partida.
+	int8_t time_truco;       // Id do último time que pediu truco. -1 se ninguém pediu ainda.
+	uint8_t mao_de_10;       // Bitmask. O bit correspondente ao id do time indica se está na mão de 10.
+	uint8_t valor_partida;   // Índice no vetor global que indica quanto vale a partida.
+
 	Carta carta_mais_forte;
 	int8_t jogador_carta_mais_forte;
 } EstadoJogo;

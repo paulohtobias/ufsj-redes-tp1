@@ -122,7 +122,4 @@ void mensagem_fim_queda(Mensagem *mensagem, const EstadoJogo *estado, uint8_t ti
 
 void mensagem_chat(Mensagem *mensagem, const char *texto, uint8_t tamanho_texto);
 
-
-void mensagem_print(const Mensagem *mensagem, const char *titulo);
-
 #endif //PROTOCOLO_H

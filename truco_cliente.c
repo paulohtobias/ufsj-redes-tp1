@@ -6,6 +6,9 @@ int main(int argc, char *argv[]) {
 		inet_pton(AF_INET, argv[1], &endereco);
 	}
 
+	//todo: usar getopt
+	glog = argc > 2 || 1;
+
 	pthread_mutex_init(&mutex_mensagem, NULL);
 	pthread_mutex_init(&mutex_gui, NULL);
 	jogador_id = -1;

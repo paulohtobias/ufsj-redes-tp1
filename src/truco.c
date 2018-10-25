@@ -92,6 +92,7 @@ uint8_t gjogadores_cartas_jogadas[NUM_JOGADORES][NUM_CARTAS_MAO];
 void iniciar_rodada() {
 	int i;
 	
+	gturno = 0;
 	gestado.empate_parcial = 0;
 	gestado.jogador_carta_mais_forte = -1;
 	carta_virar(&gestado.carta_mais_forte);
@@ -107,11 +108,11 @@ int8_t terminar_rodada(int8_t vencedor_partida) {
 	if (vencedor_partida == -1) {
 		//Incrementa a quantidade de rodadas.
 		gestado.rodadas[JOGADOR_TIME(gestado.jogador_carta_mais_forte)]++;
-	}
 
-	#ifdef DEBUG
-	printf("\nterminar_rodada: [%d|%d]\n\n", gestado.rodadas[0], gestado.rodadas[1]);
-	#endif //DEBUG
+		if (glog) {
+			printf("\033[0m[JOGO] Terminar Rodada: Ponto pro time %d\n", JOGADOR_TIME(gestado.jogador_carta_mais_forte));
+		}
+	}
 
 	int8_t i;
 	for (i = 0; i < 2; i++) {
@@ -128,9 +129,9 @@ int8_t terminar_rodada(int8_t vencedor_partida) {
 				gestado.mao_de_10 |= 1 << i;
 				gestado.valor_partida = 1;
 
-				#if defined DEBUG || defined LOG
-				printf("O time %d entrou na mão de 10.\n", i);
-				#endif //defined DEBUG || defined LOG
+				if (glog) {
+					printf("\033[0m[JOGO] O time %d entrou na mão de 10.\n", i);
+				}
 			}
 
 			gestado.jogador_carta_mais_forte = -1;
@@ -159,19 +160,15 @@ void iniciar_partida() {
 	gjogador_baralho = (gjogador_baralho + 1) % NUM_JOGADORES;
 
 	//Embaralha as cartas.
+	if (glog) {
+		printf("\033[0m[JOGO] Embaralhando as cartas\n");
+	}
 	embaralhar(gbaralho, NUM_CARTAS, 10);
-
-	//Muda a fase do jogo.
-	gfase = FJ_ENVIANDO_CARTAS;
 }
 
 int8_t terminar_partida() {
 	gestado.rodadas[0] = 0;
 	gestado.rodadas[1] = 0;
-
-	#ifdef DEBUG
-	printf("\nterminar_partida: [%d|%d]\n\n", gestado.pontos[0], gestado.pontos[1]);
-	#endif //DEBUG
 
 	int8_t i;
 	for (i = 0; i < 2; i++) {
@@ -192,10 +189,6 @@ int8_t terminar_jogo() {
 	gestado.pontos[0] = 0;
 	gestado.pontos[1] = 0;
 
-	#ifdef DEBUG
-	printf("\nterminar_jogo: [%d|%d]\n\n", gestado.jogos[0], gestado.jogos[1]);
-	#endif //DEBUG
-	
 	int8_t i;
 	for (i = 0; i < 2; i++) {
 		if (gestado.jogos[i] > 1) {
@@ -262,7 +255,7 @@ void mesa_str_atualizar(int8_t jogador_id) {
 			"\tNa mesa: |%c%s|\n\n"
 		
 		"------------------------------------------------\n"
-		"Carta mais alta: %c%s (Jogador %d)",
+		"Carta mais alta: %c%s (Jogador %d)\n",
 		
 		cartas_mao_str[0], gestado_jogadores[0].carta_jogada.numero, naipe_str[gestado_jogadores[0].carta_jogada.naipe],
 		cartas_mao_str[1], gestado_jogadores[1].carta_jogada.numero, naipe_str[gestado_jogadores[1].carta_jogada.naipe],

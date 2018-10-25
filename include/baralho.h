@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 
+/* ENUM E TIPO */
 typedef enum NAIPE {
 	NAIPE_VAZIO,
 	BARALHO_VIRADO,
@@ -25,9 +26,14 @@ typedef struct Carta {
 	uint8_t visivel;  // 0 ou 1
 } Carta;
 
+
+/* VARIÁVEIS GLOBAIS */
+extern int glog;
+
 extern char naipe_str[__NAIPE_QTD][10];
 
 
+/* FUNÇÕES */
 void carta_esvaziar(Carta *carta);
 
 void carta_virar(Carta *carta);

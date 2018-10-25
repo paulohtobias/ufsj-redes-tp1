@@ -162,9 +162,3 @@ void mensagem_fim_queda(Mensagem *mensagem, const EstadoJogo *estado, uint8_t ti
 void mensagem_chat(Mensagem *mensagem, const char *texto, uint8_t tamanho_texto) {
 	mensagem_somente_dados(mensagem, SMT_CHAT, texto, tamanho_texto);
 }
-
-
-void mensagem_print(const Mensagem *mensagem, const char *titulo) {
-	//printf("%s Mensagem [%2d (%s)]: '%s'\n", titulo, mensagem->tipo, mensagem_tipo_str[mensagem->tipo], mensagem_obter_texto(mensagem, NULL));
-	printf("%s Mensagem [%2d]\n", titulo, mensagem->tipo);
-}

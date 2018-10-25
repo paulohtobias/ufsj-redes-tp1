@@ -63,24 +63,21 @@ void *t_leitura(void *args) {
 
 	// Loop principal
 	while (1) {
-		#ifdef DEBUG
-		printf("cliente %d: thread_leitura-read\n", jogador->id);
-		#endif //DEBUG
+		if (glog) {
+			printf("\033[0;31m[LOG] Esperando mensagem do jogador %d\n", jogador->id);
+		}
 
 		//Espera comandos do jogador.
 		retval = mensagem_receber(jogador->socket_fd, &mensagem);
 		if (retval == -1) {
 			handle_error(1, "thread_leitura-read");
 		} else if (retval == 0) {
-			printf("O cliente %d encerrou a conexão.\n", jogador->id);
-			//todo: return NULL;
+			printf("\033[0;31m[LOG] O jogador %d encerrou a conexão.\n", jogador->id);
+			//todo: enviar mensagem de erro pros jogadores. Lá, eles exibem uma mensagem na tela e fecham;
 			exit(0);
 		}
 
-		#ifdef DEBUG
-		mensagem_print(&mensagem, "chegou do cliente");
-		#endif //DEBUG
-
+		//Processa a mensagem recebida.
 		if (mensagem.tipo == SMT_SEU_TURNO) {
 			pthread_mutex_lock(&mutex_jogo);
 			if ((gfase == FJ_TURNO || gfase == FJ_PEDIU_TRUCO) && JOGADOR_ESTA_ATIVO(jogador->id)) {
@@ -100,9 +97,9 @@ void *t_leitura(void *args) {
 
 				//Verifica se o jogador pediu truco|seis|nove|doze.
 				if (gindice_carta == 0) {
-					#ifdef DEBUG
-					printf("%d pediu truco!\n", jogador->id);
-					#endif //DEBUG
+					if (glog) {
+						printf("\033[0m[JOGO] Jogador %d pediu truco\n", jogador->id);
+					}
 					gfase = FJ_PEDIU_TRUCO;
 					pthread_cond_signal(&cond_jogo);
 				} else {
@@ -111,6 +108,15 @@ void *t_leitura(void *args) {
 					if (gjogadores_cartas_jogadas[jogador->id][gindice_carta] == 0) {
 						//Marca a carta como jogada.
 						gjogadores_cartas_jogadas[jogador->id][gindice_carta] = 1;
+
+						if (glog) {
+							printf("\033[0m[JOGO] Jogador %d jogou a carta %d: %c%s\n",
+								jogador->id,
+								gindice_carta,
+								gjogadores_cartas[jogador->id][gindice_carta].numero,
+								naipe_str[gjogadores_cartas[jogador->id][gindice_carta].naipe]
+							);
+						}
 
 						//Vira a carta do jogador, se necessário.
 						if (carta_no_monte) {
@@ -136,9 +142,9 @@ void *t_leitura(void *args) {
 				uint8_t indice = (jogador->id > 1);
 				gresposta[indice] = resposta;
 
-				#ifdef DEBUG
-				printf("RSP (%d) truco: %d\n", jogador->id, resposta);
-				#endif //DEBUG
+				if (glog) {
+					printf("\033[0;31m[LOG] Resposta do jogador %d ao pedido de %s: %d\n", jogador->id, valor_partida_str[gestado.valor_partida + 1], resposta);
+				}
 
 				//Verifica se ambos responderam e se as respostas são iguais.
 				if (gresposta[!indice] != RSP_INDEFINIDO && gresposta[0] == gresposta[1]) {
@@ -156,9 +162,9 @@ void *t_leitura(void *args) {
 				uint8_t indice = (jogador->id > 1);
 				gresposta[indice] = resposta;
 
-				#ifdef DEBUG
-				printf("RSP (%d) m10: %d\n", jogador->id, resposta);
-				#endif //DEBUG
+				if (glog) {
+					printf("\033[0;31m[LOG] Resposta do jogador %d sobre ir na mão de 10: %d\n", jogador->id, resposta);
+				}
 
 				//Verifica se ambos responderam e se as respostas são iguais.
 				if (gresposta[!indice] <= RSP_SIM && gresposta[0] == gresposta[1]) {
@@ -175,9 +181,9 @@ void *t_leitura(void *args) {
 				uint8_t indice = JOGADOR_TIME(jogador->id);
 				gresposta[indice] = resposta;
 
-				#ifdef DEBUG
-				printf("(%d) RSP fim jogo : %d\n", jogador->id, resposta);
-				#endif //DEBUG
+				if (glog) {
+					printf("\033[0;31m[LOG] Resposta do time %d sobre jogar novamente: %d\n", indice, resposta);
+				}
 
 				//Verifica se ambos responderam e se as respostas são iguais.
 				if (gresposta[!indice] <= RSP_SIM && gresposta[0] == gresposta[1]) {
@@ -197,18 +203,10 @@ void enviar_mensagem(const Mensagem *mensagem, uint8_t new_msg) {
 	for (i = 0; i < NUM_JOGADORES; i++) {
 		//Só envia para quem está autorizado a receber.
 		if (((1 << i) & new_msg) && jogadores[i].id != -1) {
-			#ifdef DEBUG
-			//printf("enviando msg %d (%s) para %d\n", mensagem->tipo, mensagem_tipo_str[mensagem->tipo], jogadores[i].id);
-			#endif //DEBUG
-			
 			retval = mensagem_enviar(mensagem, jogadores[i].socket_fd);
 			if (retval == -1) {
 				handle_error(1, "enviar_mensagem-write");
 			}
-			
-			#ifdef DEBUG
-			//printf("escreveu %d bytes na msg %d praa %d\n", retval, mensagem->tipo, jogadores[i].id);
-			#endif //DEBUG
 		}
 	}
 	pthread_mutex_unlock(&mutex_broadcast);
@@ -234,9 +232,9 @@ int avisar_truco(int8_t jogador_id) {
 	
 	//Repostas foram dadas.
 	if (gresposta[0] == RSP_NAO) {
-		#ifdef DEBUG
-		printf("o time %d correu do truco|seis|nove|doze\n", JOGADOR_TIME_ADV(jogador_id));
-		#endif //DEBUG
+		if (glog) {
+			printf("\033[0m[JOGO] O time %d correu do pedido de %s\n", JOGADOR_TIME_ADV(jogador_id), valor_partida_str[gestado.valor_partida + 1]);
+		}
 		
 		gvencedor_partida = JOGADOR_TIME(jogador_id);
 		pthread_mutex_unlock(&mutex_jogo);
@@ -249,9 +247,9 @@ int avisar_truco(int8_t jogador_id) {
 		//Atualização geral.
 		servidor_mensagem_atualizar_estado("Truco|Seis|Nove|Doze Aceito.");
 
-		#ifdef DEBUG
-		printf("o time %d aceitou o truco|seis|nove|doze\n", JOGADOR_TIME_ADV(jogador_id));
-		#endif //DEBUG
+		if (glog) {
+			printf("\033[0m[JOGO] O time %d aceitou o pedido de %s\n", JOGADOR_TIME_ADV(jogador_id), valor_partida_str[gestado.valor_partida + 1]);
+		}
 
 		pthread_mutex_unlock(&mutex_jogo);
 		return RSP_SIM;
@@ -265,15 +263,14 @@ int avisar_truco(int8_t jogador_id) {
 		} else {
 			jogador_id_adv = gestado.jogador_atual;
 		}
-
-		#ifdef DEBUG
-		printf("AUMENTOU: (%d, %d)\n", jogador_id, gestado.jogador_atual);
-		printf("o jogador %d aumentou!! truco|seis|nove|doze\n", jogador_id_adv);
-		#endif //DEBUG
 		
 		//Aumenta o valor da partida e avisa a todos os jogadores.
 		gestado.valor_partida++;
 		servidor_mensagem_atualizar_estado(NULL);
+
+		if (glog) {
+			printf("\033[0m[JOGO] O jogador %d pediu pra aumentar a aposta pra %s\n", jogador_id_adv, valor_partida_str[gestado.valor_partida + 1]);
+		}
 
 		pthread_mutex_unlock(&mutex_jogo);
 		return avisar_truco(jogador_id_adv);
@@ -283,9 +280,9 @@ int avisar_truco(int8_t jogador_id) {
 void esperar_resposta(RESPOSTA resposta_maxima) {
 	//Espera enquanto não houver uma das respostas esperadas e elas não forem iguais.
 	while (gresposta[0] > resposta_maxima || gresposta[0] != gresposta[1]) {
-		#if defined DEBUG || LOG
-		printf("Aguardando o resposta...\n");
-		#endif //DEBUG
+		if (glog) {
+			printf("\033[0;31m[LOG] Aguardando resposta...\n");
+		}
 		
 		pthread_cond_wait(&cond_jogo, &mutex_jogo);
 	}
