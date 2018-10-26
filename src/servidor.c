@@ -73,7 +73,6 @@ void *t_leitura(void *args) {
 			handle_error(1, "thread_leitura-read");
 		} else if (retval == 0) {
 			printf("\033[0;31m[LOG] O jogador %d encerrou a conexão.\n", jogador->id);
-			//todo: enviar mensagem de erro pros jogadores. Lá, eles exibem uma mensagem na tela e fecham;
 			exit(0);
 		}
 

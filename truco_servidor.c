@@ -1,12 +1,30 @@
 #include "servidor.h"
+#include <unistd.h>
+#include <ctype.h>
 #include <time.h>
 
 int main(int argc, char *argv[]) {
+	//Pegando as flags
+	glog = 0;
+	int opcao;
+	opterr = 0;
+	while ((opcao = getopt(argc, argv, "l")) != -1) {
+		switch (opcao) {
+			case 'l':
+				glog = 1;
+				break;
+			case '?':
+				if (isprint (optopt)) {
+					fprintf(stderr, "Opção -%c desconhecida.\n", optopt);
+				} else {
+					fprintf(stderr, "Caractere '\\x%x' de opção desconhecido.\n", optopt);
+				}
+				exit(1);
+		}
+	}
+
 	int i, j;
-
-	//todo: usar getopt
-	glog = argc > 1 || 1;
-
+	
 	srand((unsigned) time(NULL));
 
 	int servidor_socket_fd = criar_socket_servidor();

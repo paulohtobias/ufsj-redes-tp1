@@ -1,13 +1,30 @@
 #include "cliente.h"
+#include <unistd.h>
+#include <ctype.h>
 
 int main(int argc, char *argv[]) {
+	//Pegando as flags
 	in_addr_t endereco = INADDR_ANY;
-	if (argc > 1) {
-		inet_pton(AF_INET, argv[1], &endereco);
+	int opcao;
+	opterr = 0;
+	while ((opcao = getopt(argc, argv, "le:")) != -1) {
+		switch (opcao) {
+			case 'l':
+				glog = 1;
+				break;
+			case 'e':
+				inet_pton(AF_INET, optarg, &endereco);
+			case '?':
+				if (optopt == 'e') {
+					fprintf(stderr, "Opção -%c precisa do endereço do servidor.\n", optopt);
+				} else if (isprint (optopt)) {
+					fprintf(stderr, "Opção -%c desconhecida.\n", optopt);
+				} else {
+					fprintf(stderr, "Caractere '\\x%x' de opção desconhecido.\n", optopt);
+				}
+				exit(1);
+		}
 	}
-
-	//todo: usar getopt
-	glog = argc > 2 || 1;
 
 	pthread_mutex_init(&mutex_mensagem, NULL);
 	pthread_mutex_init(&mutex_gui, NULL);

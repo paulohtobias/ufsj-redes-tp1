@@ -47,7 +47,7 @@ typedef struct EstadoJogo {
 	uint8_t pontos[2];   // [0, 12]
 	uint8_t jogos[2];    // 0 ou 1
 
-	int8_t jogador_atual; //todo: remover
+	int8_t jogador_atual;
 	
 	uint8_t empate_parcial;  // Se houve empate na rodada até o momento.
 	uint8_t empate;          // Se a primeira rodada terminou em empate.

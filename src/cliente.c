@@ -16,7 +16,6 @@ void encerrar_programa() {
 
 void mostrar_ajuda(GtkMenuItem *menuitem, gpointer user_data) {
 	GtkWidget *sobre = GTK_WIDGET(gtk_builder_get_object(builder, "sobre"));
-
 	gtk_dialog_run(GTK_DIALOG(sobre));
 }
 
@@ -40,11 +39,10 @@ void *t_receive(void *arg) {
 
 	//GUI - Chat
 	GtkWidget *chat_textview_log = GTK_WIDGET(gtk_builder_get_object(builder, "chat_textview_log"));
-	setup_scroll(GTK_TEXT_VIEW(chat_textview_log), FALSE);
-	
-	//Extra
 	GtkTextIter iter_end;
 	GtkTextBuffer *textbuffer;
+	setup_scroll(GTK_TEXT_VIEW(chat_textview_log), FALSE);
+
 	pthread_mutex_unlock(&mutex_gui);
 
 	while (1) {
@@ -58,7 +56,7 @@ void *t_receive(void *arg) {
 			handle_error(1, "thread_leitura-read");
 		} else if (retval == 0) {
 			printf("\033[0;31m[LOG] O servidor encerrou a conexão.\n");
-			exit(0);
+			exit(1);
 		}
 
 		if (retval > 0) {

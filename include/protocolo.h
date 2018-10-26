@@ -19,7 +19,6 @@
 
 
 /* ENUMS E TIPOS */
-//todo: smt_jogada_aceita
 typedef enum MENSAGEM_TIPO {
 	SMT_ERRO,
 	SMT_BEM_VINDO,
