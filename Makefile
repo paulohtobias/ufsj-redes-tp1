@@ -13,7 +13,7 @@ INCLUDE_PATHS := -I$(IDIR)
 #Libraries
 LIBS := gtk+-3.0
 CFLAGS += `pkg-config --cflags $(LIBS)`
-LOADLIBES := -Bstatic `pkg-config --libs $(LIBS)`
+LOADLIBES := `pkg-config --libs $(LIBS)`
 
 #Compilation line
 COMPILE = $(CC) $(CFLAGS) $(INCLUDE_PATHS)
@@ -49,8 +49,7 @@ $(ODIR)/%.o: $(SDIR)/%.c
 
 .PHONY : clean
 clean :
-	-rm -f obj/debug/*
-	-rm -f obj/release/*
+	-rm -f obj/debug/* obj/release/* servidor cliente *.d
 
 init:
 	mkdir -p include
